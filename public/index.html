@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Photo Gallery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="logo">
+        <h1>Gallery</h1>
+      </div>
+      <nav id="category-nav">
+        <!-- Categories will be injected here -->
+      </nav>
+      <div class="sidebar-actions">
+        <button id="new-category-btn" class="action-btn">+ New Category</button>
+      </div>
+    </aside>
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar-left">
+          <h2 id="current-view-title">All Photos</h2>
+          <div class="photo-count" id="photo-count">0 photos</div>
+        </div>
+        <div class="topbar-actions">
+          <button id="toggle-edit-btn" class="action-btn">Edit</button>
+        </div>
+      </header>
+      <div id="edit-toolbar" class="edit-toolbar" style="display: none;">
+        <span id="selected-count">0 selected</span>
+        <div class="edit-buttons">
+          <button id="batch-move-btn" class="action-btn primary" disabled>Move</button>
+          <button id="batch-delete-btn" class="action-btn danger" disabled>Delete</button>
+        </div>
+      </div>
+      <div class="gallery-grid" id="gallery-grid">
+        <!-- Photos will be injected here -->
+      </div>
+    </main>
+  </div>
+
+  <!-- Lightbox Modal -->
+  <div id="lightbox-modal" class="lightbox-modal">
+    <span class="close-btn" id="close-lightbox">&times;</span>
+    <img class="lightbox-content" id="lightbox-img">
+    <div id="lightbox-caption" class="lightbox-caption"></div>
+    <button id="move-photo-btn" class="action-btn move-btn">Move Photo</button>
+  </div>
+
+  <!-- Create Category Modal -->
+  <div id="create-category-modal" class="custom-modal">
+    <div class="modal-content">
+      <span class="close-btn" id="close-create-category">&times;</span>
+      <h3>Create New Category</h3>
+      <input type="text" id="new-cat-name" placeholder="Category Name" />
+      <input type="text" id="new-subcat-name" placeholder="Subcategory (Optional)" />
+      <button id="submit-create-cat" class="action-btn primary">Create</button>
+    </div>
+  </div>
+
+  <!-- Move Photo Modal -->
+  <div id="move-photo-modal" class="custom-modal">
+    <div class="modal-content">
+      <span class="close-btn" id="close-move-photo">&times;</span>
+      <h3 id="move-modal-title">Move Photo</h3>
+      <p id="moving-photo-name"></p>
+      <label>Select or type Category:</label>
+      <input list="category-list" id="move-cat-input" placeholder="e.g. Nature" />
+      <datalist id="category-list"></datalist>
+
+      <label>Select or type Subcategory:</label>
+      <input list="subcategory-list" id="move-subcat-input" placeholder="e.g. Mountains (or General)" />
+      <datalist id="subcategory-list"></datalist>
+
+      <button id="submit-move-photo" class="action-btn primary">Move Here</button>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-confirm-modal" class="custom-modal">
+    <div class="modal-content">
+      <span class="close-btn" id="close-delete-confirm">&times;</span>
+      <h3>Confirm Deletion</h3>
+      <p id="delete-confirm-text">Are you sure you want to permanently delete these photos?</p>
+      <p class="warning-text">This action cannot be undone.</p>
+      <div class="modal-actions" style="display: flex; gap: 1rem; margin-top: 1rem;">
+        <button id="cancel-delete-btn" class="action-btn" style="flex: 1;">Cancel</button>
+        <button id="submit-delete-btn" class="action-btn danger" style="flex: 1;">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

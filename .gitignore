@@ -1,0 +1,7 @@
+node_modules/
+.DS_Store
+
+# Ignore all photos so personal pictures don't accidentally get pushed to GitHub
+photos/*
+# But keep the photos directory itself
+!photos/.gitkeep
