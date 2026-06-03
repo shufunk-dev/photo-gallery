@@ -13,6 +13,13 @@ echo Checking for updates...
 git pull
 echo.
 
+:: Check if dependencies are installed, install if missing
+IF NOT EXIST "node_modules\" (
+    echo Installing required dependencies for the first time...
+    npm install
+    echo.
+)
+
 :: Start the server. If "node" isn't recognized, try the absolute path.
 node -v >nul 2>&1
 IF %ERRORLEVEL% NEQ 0 (
