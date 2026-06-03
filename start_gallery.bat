@@ -8,6 +8,11 @@ echo ===================================================
 :: Navigate to the directory where this script is located
 cd /d "%~dp0"
 
+:: Automatically pull the latest code from GitHub
+echo Checking for updates...
+git pull
+echo.
+
 :: Start the server. If "node" isn't recognized, try the absolute path.
 node -v >nul 2>&1
 IF %ERRORLEVEL% NEQ 0 (
