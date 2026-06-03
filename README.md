@@ -9,6 +9,7 @@ This application allows you to view your photos by reading your local folder str
 - **Edit Mode & Batch Actions**: Select multiple photos at once to mass move or delete them.
 - **Cross-Platform**: Works natively on Windows, macOS, and Linux.
 - **Premium UI**: Dark mode, smooth CSS micro-animations, and a beautiful Lightbox for viewing photos.
+- **Auto-Updating**: The startup script automatically checks GitHub for updates and installs new dependencies every time you launch the app.
 
 ## Prerequisites
 - [Node.js](https://nodejs.org/) installed on your machine.
