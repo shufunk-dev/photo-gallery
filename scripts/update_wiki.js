@@ -97,11 +97,11 @@ async function run() {
     const mdContent = fs.readFileSync(path.join(__dirname, '../docs/manual.md'), 'utf-8');
     const wikitextContent = markdownToWikitext(mdContent);
 
-    console.log("5. Pushing Manual to Wiki page 'Photo_Gallery/User_Manual'...");
+    console.log("5. Pushing Manual to Wiki page 'Photo Gallery: User Manual'...");
     data = await apiRequest({
       action: 'edit',
-      title: 'Photo_Gallery/User_Manual',
-      text: wikitextContent,
+      title: 'Photo Gallery: User Manual',
+      text: wikitextContent + '\n\n[[Category:Photo Album Organizer]]',
       token: csrfToken,
       bot: true
     }, true);
@@ -112,18 +112,46 @@ async function run() {
       console.error("Failed to edit manual:", data);
     }
 
-    console.log("6. Pushing Index to Wiki page 'Photo_Gallery'...");
-    const indexContent = `= Photo Gallery =\n\nWelcome to the Photo Gallery project!\n\n* [[Photo_Gallery/User_Manual|User Manual]]\n`;
+    console.log("6. Fetching Main_Page...");
     data = await apiRequest({
-      action: 'edit',
-      title: 'Photo_Gallery',
-      text: indexContent,
-      token: csrfToken,
-      bot: true
-    }, true);
+      action: 'query',
+      prop: 'revisions',
+      titles: 'Main_Page',
+      rvprop: 'content',
+      rvslots: 'main'
+    });
 
-    if (data.edit && data.edit.result === 'Success') {
-      console.log("Successfully updated the index page: https://wiki.shufeltdesigns.com/index.php/Photo_Gallery");
+    let mainPageContent = '';
+    for (let p in data.query.pages) {
+      mainPageContent = data.query.pages[p].revisions[0].slots.main['*'];
+    }
+
+    const sectionParts = mainPageContent.split('=== Photo Album Organizer ===');
+    if (sectionParts.length === 2) {
+      const sectionAfter = sectionParts[1];
+      const placeholderRegex = /\*\s*''Documentation pages are currently being prepared\.''/;
+      
+      if (placeholderRegex.test(sectionAfter)) {
+        console.log("7. Placeholder found. Updating Main_Page...");
+        const updatedAfter = sectionAfter.replace(placeholderRegex, '* [[Photo Gallery: User Manual|User Manual]]\n* Browse all pages in [[:Category:Photo Album Organizer]]');
+        const updatedContent = sectionParts[0] + '=== Photo Album Organizer ===' + updatedAfter;
+        
+        data = await apiRequest({
+          action: 'edit',
+          title: 'Main_Page',
+          text: updatedContent,
+          token: csrfToken,
+          bot: true
+        }, true);
+        
+        if (data.edit && data.edit.result === 'Success') {
+          console.log("Successfully updated the Main_Page!");
+        }
+      } else {
+        console.log("7. Placeholder already replaced or not found in this section. Skipping Main_Page update.");
+      }
+    } else {
+      console.log("7. Photo Album Organizer section not found. Skipping Main_Page update.");
     }
 
   } catch (err) {
