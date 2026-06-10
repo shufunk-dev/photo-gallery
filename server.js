@@ -219,6 +219,23 @@ app.post('/api/photos/delete-batch', (req, res) => {
   }
 });
 
+// Serve Manual HTML
+app.get('/api/manual', (req, res) => {
+  try {
+    const { marked } = require('marked');
+    const manualPath = path.join(__dirname, 'docs', 'manual.md');
+    if (!fs.existsSync(manualPath)) {
+      return res.status(404).json({ error: 'Manual not found' });
+    }
+    const mdContent = fs.readFileSync(manualPath, 'utf-8');
+    const htmlContent = marked(mdContent);
+    res.json({ html: htmlContent });
+  } catch (err) {
+    console.error('Error serving manual:', err);
+    res.status(500).json({ error: 'Failed to generate manual' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
 });

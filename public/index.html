@@ -20,6 +20,7 @@
       </nav>
       <div class="sidebar-actions">
         <button id="new-category-btn" class="action-btn">+ New Category</button>
+        <button id="open-manual-btn" class="action-btn" style="margin-top: 0.5rem; background-color: rgba(255,255,255,0.05); color: #a5b4fc;">Help / Manual</button>
       </div>
     </aside>
     <main class="main-content">
@@ -92,6 +93,16 @@
       <div class="modal-actions" style="display: flex; gap: 1rem; margin-top: 1rem;">
         <button id="cancel-delete-btn" class="action-btn" style="flex: 1;">Cancel</button>
         <button id="submit-delete-btn" class="action-btn danger" style="flex: 1;">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manual Modal -->
+  <div id="manual-modal" class="custom-modal">
+    <div class="modal-content" style="max-width: 800px; width: 95%; max-height: 90vh; overflow-y: auto;">
+      <span class="close-btn" id="close-manual">&times;</span>
+      <div id="manual-content" class="markdown-body">
+        Loading manual...
       </div>
     </div>
   </div>

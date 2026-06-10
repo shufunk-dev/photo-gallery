@@ -46,6 +46,12 @@ const catList = document.getElementById('category-list');
 const subcatList = document.getElementById('subcategory-list');
 const movingPhotoName = document.getElementById('moving-photo-name');
 
+// Manual Elements
+const openManualBtn = document.getElementById('open-manual-btn');
+const manualModal = document.getElementById('manual-modal');
+const closeManual = document.getElementById('close-manual');
+const manualContent = document.getElementById('manual-content');
+
 // --- Edit Mode Logic ---
 function updateEditUI() {
   if (isEditMode) {
@@ -79,6 +85,7 @@ function closeAllModals() {
   createCatModal.classList.remove('active');
   movePhotoModal.classList.remove('active');
   deleteConfirmModal.classList.remove('active');
+  manualModal.classList.remove('active');
 }
 
 closeLightbox.onclick = closeAllModals;
@@ -86,10 +93,27 @@ closeCreateCat.onclick = closeAllModals;
 closeMovePhoto.onclick = closeAllModals;
 closeDeleteConfirm.onclick = closeAllModals;
 cancelDeleteBtn.onclick = closeAllModals;
+closeManual.onclick = closeAllModals;
 
 window.onclick = (e) => {
-  if (e.target === lightboxModal || e.target === createCatModal || e.target === movePhotoModal || e.target === deleteConfirmModal) {
+  if (e.target === lightboxModal || e.target === createCatModal || e.target === movePhotoModal || e.target === deleteConfirmModal || e.target === manualModal) {
     closeAllModals();
+  }
+};
+
+// --- Manual Logic ---
+openManualBtn.onclick = async () => {
+  manualModal.classList.add('active');
+  try {
+    const res = await fetch('/api/manual');
+    const data = await res.json();
+    if (res.ok) {
+      manualContent.innerHTML = data.html;
+    } else {
+      manualContent.innerHTML = `<p style="color:red">Error: ${data.error}</p>`;
+    }
+  } catch (err) {
+    manualContent.innerHTML = `<p style="color:red">Failed to load manual.</p>`;
   }
 };
 

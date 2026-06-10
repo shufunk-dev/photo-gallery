@@ -56,6 +56,21 @@ async function apiRequest(params, isPost = false) {
   return data;
 }
 
+function markdownToWikitext(md) {
+  let wt = md;
+  // Headers
+  wt = wt.replace(/^### (.*$)/gim, '=== $1 ===');
+  wt = wt.replace(/^## (.*$)/gim, '== $1 ==');
+  wt = wt.replace(/^# (.*$)/gim, '= $1 =');
+  // Bold
+  wt = wt.replace(/\*\*(.*?)\*\*/g, "'''$1'''");
+  // Italic (ignoring lists for simple regex)
+  wt = wt.replace(/(?<!^)\*(.*?)\*(?!$)/gim, "''$1''");
+  // Links
+  wt = wt.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '[$2 $1]');
+  return wt;
+}
+
 async function run() {
   try {
     console.log("1. Fetching login token...");
@@ -79,23 +94,36 @@ async function run() {
     const csrfToken = data.query.tokens.csrftoken;
 
     console.log("4. Reading local documentation...");
-    const readmeContent = fs.readFileSync(path.join(__dirname, '../README.md'), 'utf-8');
-    
-    const wikiContent = `<!-- AUTO-GENERATED FROM GITHUB README -->\n\n` + readmeContent;
+    const mdContent = fs.readFileSync(path.join(__dirname, '../docs/manual.md'), 'utf-8');
+    const wikitextContent = markdownToWikitext(mdContent);
 
-    console.log("5. Pushing content to Wiki page 'Photo_Gallery'...");
+    console.log("5. Pushing Manual to Wiki page 'Photo_Gallery/User_Manual'...");
     data = await apiRequest({
       action: 'edit',
-      title: 'Photo_Gallery',
-      text: wikiContent,
+      title: 'Photo_Gallery/User_Manual',
+      text: wikitextContent,
       token: csrfToken,
       bot: true
     }, true);
 
     if (data.edit && data.edit.result === 'Success') {
-      console.log("Successfully updated the wiki page: https://wiki.shufeltdesigns.com/index.php/Photo_Gallery");
+      console.log("Successfully updated the manual page!");
     } else {
-      console.error("Failed to edit:", data);
+      console.error("Failed to edit manual:", data);
+    }
+
+    console.log("6. Pushing Index to Wiki page 'Photo_Gallery'...");
+    const indexContent = `= Photo Gallery =\n\nWelcome to the Photo Gallery project!\n\n* [[Photo_Gallery/User_Manual|User Manual]]\n`;
+    data = await apiRequest({
+      action: 'edit',
+      title: 'Photo_Gallery',
+      text: indexContent,
+      token: csrfToken,
+      bot: true
+    }, true);
+
+    if (data.edit && data.edit.result === 'Success') {
+      console.log("Successfully updated the index page: https://wiki.shufeltdesigns.com/index.php/Photo_Gallery");
     }
 
   } catch (err) {
