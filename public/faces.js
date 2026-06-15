@@ -199,21 +199,25 @@ function renderPeopleGrid() {
 
     const repFace = cluster.faces[0];
     
-    // Instead of cropping just show the image and maybe focus
     const img = document.createElement('img');
     img.src = repFace.imgPath;
-    img.style.objectFit = 'cover';
-    img.style.height = '150px';
+    img.loading = 'lazy';
+
+    const overlay = document.createElement('div');
+    overlay.className = 'photo-overlay';
 
     const info = document.createElement('div');
     info.className = 'photo-info';
-    info.style.textAlign = 'center';
     
     const name = faceDb.namedFaces[cluster.id] || 'Unknown Person';
-    info.textContent = `${name} (${cluster.faces.length})`;
+    info.innerHTML = `
+      <div class="photo-name">${name}</div>
+      <p>${cluster.faces.length} photos</p>
+    `;
 
+    overlay.appendChild(info);
     card.appendChild(img);
-    card.appendChild(info);
+    card.appendChild(overlay);
 
     card.onclick = () => {
       openPersonView(cluster);
