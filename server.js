@@ -219,6 +219,34 @@ app.post('/api/photos/delete-batch', (req, res) => {
   }
 });
 
+// --- Faces Database ---
+const FACES_DB_PATH = path.join(__dirname, 'faces.json');
+
+// Get Faces Database
+app.get('/api/faces', (req, res) => {
+  if (fs.existsSync(FACES_DB_PATH)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(FACES_DB_PATH, 'utf-8'));
+      res.json(data);
+    } catch (e) {
+      res.status(500).json({ error: 'Failed to read faces database' });
+    }
+  } else {
+    res.json({ clusters: [], namedFaces: {} });
+  }
+});
+
+// Update Faces Database
+app.post('/api/faces', (req, res) => {
+  try {
+    fs.writeFileSync(FACES_DB_PATH, JSON.stringify(req.body, null, 2), 'utf-8');
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Error saving faces database:', e);
+    res.status(500).json({ error: 'Failed to save faces database' });
+  }
+});
+
 // Serve Manual HTML
 app.get('/api/manual', (req, res) => {
   try {
