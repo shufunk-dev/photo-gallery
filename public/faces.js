@@ -10,24 +10,24 @@ const scannerStatus = document.getElementById('scanner-status');
 const scannerProgressBar = document.getElementById('scanner-progress-bar');
 const startScanBtn = document.getElementById('start-scan-btn');
 const peopleGrid = document.getElementById('people-grid');
-const galleryGrid = document.getElementById('gallery-grid');
+const peopleGalleryGrid = document.getElementById('gallery-grid');
 const peopleView = document.getElementById('people-view');
 const galleryTabBtn = document.getElementById('gallery-tab-btn');
 const peopleTabBtn = document.getElementById('people-tab-btn');
-const editToolbar = document.getElementById('edit-toolbar');
+const peopleEditToolbar = document.getElementById('edit-toolbar');
 
 // Initialize Tabs
 galleryTabBtn.onclick = () => {
   peopleView.style.display = 'none';
-  galleryGrid.style.display = 'grid';
+  peopleGalleryGrid.style.display = 'grid';
   galleryTabBtn.style.background = 'var(--bg-hover)';
   peopleTabBtn.style.background = 'transparent';
   document.getElementById('current-view-title').textContent = 'All Photos';
 };
 
 peopleTabBtn.onclick = () => {
-  galleryGrid.style.display = 'none';
-  editToolbar.style.display = 'none';
+  peopleGalleryGrid.style.display = 'none';
+  peopleEditToolbar.style.display = 'none';
   peopleView.style.display = 'block';
   peopleTabBtn.style.background = 'var(--bg-hover)';
   galleryTabBtn.style.background = 'transparent';
