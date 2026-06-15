@@ -114,7 +114,7 @@ startScanBtn.onclick = async () => {
     if (photo.subcategory !== 'General') {
       imgPath += `/${encodeURIComponent(photo.subcategory)}`;
     }
-    imgPath += `/${encodeURIComponent(photo.filename)}`;
+    imgPath += `/${encodeURIComponent(photo.name)}`;
     
     img.crossOrigin = "anonymous";
     img.src = imgPath;
@@ -126,7 +126,7 @@ startScanBtn.onclick = async () => {
           for (let det of detections) {
             allDetectedFaces.push({
               descriptor: Array.from(det.descriptor), // Convert Float32Array to standard array for JSON saving
-              filename: photo.filename,
+              filename: photo.name,
               category: photo.category,
               subcategory: photo.subcategory,
               imgPath: imgPath,
