@@ -85,7 +85,8 @@ startScanBtn.onclick = async () => {
   
   try {
     const res = await fetch('/api/photos');
-    allPhotosCache = await res.json();
+    const data = await res.json();
+    allPhotosCache = data.photos || [];
   } catch (err) {
     scannerStatus.textContent = "Failed to fetch photos.";
     isScanning = false;
@@ -93,6 +94,11 @@ startScanBtn.onclick = async () => {
   }
 
   let totalPhotos = allPhotosCache.length;
+  if (totalPhotos === 0) {
+    scannerStatus.textContent = "No photos found to scan.";
+    isScanning = false;
+    return;
+  }
   let processed = 0;
   
   // We will store flat array of detected faces: { descriptor, filename, category, subcategory }
