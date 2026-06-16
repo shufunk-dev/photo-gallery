@@ -16,6 +16,13 @@ Any images placed directly inside a Category without a sub-folder are listed und
 2. **All Photos**: Click "All Photos" at the top of the sidebar to see everything at once.
 3. **Lightbox View**: Click any small photo thumbnail to open it in full size. You can exit this view by clicking the "X" button or clicking anywhere outside the image.
 
+## People & Facial Recognition (AI Scanner)
+
+The gallery features a built-in, 100% offline Artificial Intelligence that can automatically detect and group photos of the same person.
+1. **The People Tab**: Click the "People" tab located at the top left of the sidebar to switch away from the standard Gallery view.
+2. **Starting a Scan**: Click the "Start Scan" button. The app will load your photos into your computer's Graphics Card (WebGL) and extract mathematical "face descriptors".
+3. **Naming Clusters**: Once the scan finishes, the AI will group matching faces together into clusters. You can click on any cluster, assign a name to that person, and instantly view every photo in your gallery that they appear in!
+
 ## Organizing Photos
 
 The gallery isn't just a viewer; it's a powerful organization tool! Any changes you make here actually modify the files on your computer's hard drive.
