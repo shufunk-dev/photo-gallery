@@ -5,7 +5,7 @@ A fast, fully-featured, cross-platform local photo gallery and organizer built w
 This application allows you to view your photos by reading your local folder structure, and it features an "Edit Mode" that lets you create new categories, batch move, and batch delete photos seamlessly.
 
 ## Features
-- **AI Facial Recognition (Early Alpha)**: Scan your local gallery to detect and cluster identical faces automatically. Runs 100% offline via WebGL graphics acceleration.
+- **AI Facial Recognition**: Scan your local gallery to detect and cluster identical faces automatically. Runs 100% offline via WebGL graphics acceleration.
 - **Dynamic File Reading**: Automatically reads your folder structure to categorize photos into Categories and Subcategories.
 - **Edit Mode & Batch Actions**: Select multiple photos at once to mass move or delete them.
 - **Cross-Platform**: Works natively on Windows, macOS, and Linux.
