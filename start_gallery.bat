@@ -8,6 +8,21 @@ echo ===================================================
 :: Navigate to the directory where this script is located
 cd /d "%~dp0"
 
+:: Check if Node.js / npm is installed
+where npm >nul 2>nul
+if %errorlevel% neq 0 (
+    echo.
+    echo [ERROR] Node.js is not installed on your computer!
+    echo This application requires Node.js to run the local server.
+    echo Please download and install it for free from: https://nodejs.org/
+    echo.
+    echo After installing, double-click this file again to start the gallery.
+    echo.
+    pause
+    exit /b
+)
+
+
 :: Automatically pull the latest code from GitHub
 echo Checking for updates...
 git pull
