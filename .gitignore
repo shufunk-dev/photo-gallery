@@ -1,6 +1,8 @@
 node_modules/
 .DS_Store
 .env
+.env.example
+scripts/
 faces.json
 
 # Ignore all photos so personal pictures don't accidentally get pushed to GitHub
