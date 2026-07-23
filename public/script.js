@@ -3,6 +3,7 @@ let categoriesTree = {};
 let currentPhotoObj = null;
 let isEditMode = false;
 let selectedPhotos = new Set();
+let currentDirPath = '';
 
 // DOM Elements
 const galleryGrid = document.getElementById('gallery-grid');
@@ -52,6 +53,15 @@ const manualModal = document.getElementById('manual-modal');
 const closeManual = document.getElementById('close-manual');
 const manualContent = document.getElementById('manual-content');
 
+// Upload Elements
+const uploadPhotoBtn = document.getElementById('upload-photo-btn');
+const uploadFileInput = document.getElementById('upload-file-input');
+const uploadTargetModal = document.getElementById('upload-target-modal');
+const closeUploadTarget = document.getElementById('close-upload-target');
+const submitUploadBtn = document.getElementById('submit-upload-btn');
+const uploadCatInput = document.getElementById('upload-cat-input');
+const uploadingPhotoName = document.getElementById('uploading-photo-name');
+
 // --- Edit Mode Logic ---
 function updateEditUI() {
   if (isEditMode) {
@@ -86,6 +96,7 @@ function closeAllModals() {
   movePhotoModal.classList.remove('active');
   deleteConfirmModal.classList.remove('active');
   manualModal.classList.remove('active');
+  uploadTargetModal.classList.remove('active');
 }
 
 closeLightbox.onclick = closeAllModals;
@@ -94,9 +105,10 @@ closeMovePhoto.onclick = closeAllModals;
 closeDeleteConfirm.onclick = closeAllModals;
 cancelDeleteBtn.onclick = closeAllModals;
 closeManual.onclick = closeAllModals;
+closeUploadTarget.onclick = closeAllModals;
 
 window.onclick = (e) => {
-  if (e.target === lightboxModal || e.target === createCatModal || e.target === movePhotoModal || e.target === deleteConfirmModal || e.target === manualModal) {
+  if (e.target === lightboxModal || e.target === createCatModal || e.target === movePhotoModal || e.target === deleteConfirmModal || e.target === manualModal || e.target === uploadTargetModal) {
     closeAllModals();
   }
 };
@@ -114,6 +126,63 @@ openManualBtn.onclick = async () => {
     }
   } catch (err) {
     manualContent.innerHTML = `<p style="color:red">Failed to load manual.</p>`;
+  }
+};
+
+// --- Upload Logic ---
+uploadPhotoBtn.onclick = () => {
+  uploadFileInput.click();
+};
+
+uploadFileInput.onchange = (e) => {
+  if (e.target.files.length === 0) return;
+  
+  catList.innerHTML = '';
+  const allPaths = flattenPaths(categoriesTree);
+  allPaths.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p;
+    catList.appendChild(opt);
+  });
+  
+  uploadingPhotoName.textContent = `Ready to upload ${e.target.files.length} photo(s)`;
+  uploadCatInput.value = currentDirPath === 'Root' ? '' : currentDirPath;
+  uploadTargetModal.classList.add('active');
+};
+
+submitUploadBtn.onclick = async () => {
+  if (uploadFileInput.files.length === 0) return;
+  
+  const targetPath = uploadCatInput.value.trim();
+  const formData = new FormData();
+  formData.append('targetPath', targetPath);
+  
+  for (let i = 0; i < uploadFileInput.files.length; i++) {
+    formData.append('photos', uploadFileInput.files[i]);
+  }
+  
+  submitUploadBtn.textContent = 'Uploading...';
+  submitUploadBtn.disabled = true;
+  
+  try {
+    const res = await fetch('/api/photos/upload', {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (res.ok) {
+      uploadFileInput.value = '';
+      closeAllModals();
+      init();
+    } else {
+      const data = await res.json();
+      alert('Upload Error: ' + data.error);
+    }
+  } catch (err) {
+    alert('Failed to upload photos');
+  } finally {
+    submitUploadBtn.textContent = 'Upload';
+    submitUploadBtn.disabled = false;
   }
 };
 
@@ -344,7 +413,7 @@ async function init() {
     if (activeBtn && activeBtn.textContent !== 'All Photos') {
        activeBtn.click();
     } else {
-       renderGallery(allPhotos, 'All Photos', 'All Photos');
+       renderGallery(allPhotos, 'All Photos', 'All Photos', 'Root');
     }
   } catch (err) {
     console.error('Failed to load photos', err);
@@ -387,7 +456,7 @@ function renderNavigation() {
   allBtn.textContent = 'All Photos';
   allBtn.onclick = () => {
     setActiveNav(allBtn);
-    renderGallery(allPhotos, 'All Photos', 'All Photos');
+    renderGallery(allPhotos, 'All Photos', 'All Photos', 'Root');
   };
   
   categoryNav.appendChild(rootDropZone);
@@ -482,7 +551,7 @@ function renderTree(node, parentEl, currentPath, depth = 0) {
       
       // Filter photos to only those exactly in this dirPath (do not include subfolders)
       const filtered = allPhotos.filter(p => p.dirPath === dirPath);
-      renderGallery(filtered, dirPath, key);
+      renderGallery(filtered, dirPath, key, dirPath);
     };
 
     navItem.appendChild(catRow);
@@ -501,8 +570,9 @@ function setActiveNav(button) {
   button.classList.add('active');
 }
 
-function renderGallery(photos, title, shortTitle) {
+function renderGallery(photos, title, shortTitle, dirPath = 'Root') {
   currentViewTitle.textContent = shortTitle || title;
+  currentDirPath = dirPath;
   photoCount.textContent = `${photos.length} photo${photos.length !== 1 ? 's' : ''}`;
   galleryGrid.innerHTML = '';
   

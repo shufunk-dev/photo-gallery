@@ -34,7 +34,9 @@
           <div class="photo-count" id="photo-count">0 photos</div>
         </div>
         <div class="topbar-actions">
+          <button id="upload-photo-btn" class="action-btn primary" style="margin-right: 1rem;">Upload Photos</button>
           <button id="toggle-edit-btn" class="action-btn">Edit</button>
+          <input type="file" id="upload-file-input" multiple accept="image/*" style="display: none;">
         </div>
       </header>
       <div id="edit-toolbar" class="edit-toolbar" style="display: none;">
@@ -66,10 +68,6 @@
     </main>
   </div>
 
-  <!-- Face API Script -->
-  <script src="face-api.min.js"></script>
-  <script src="faces.js"></script>
-
   <!-- Lightbox Modal -->
   <div id="lightbox-modal" class="lightbox-modal">
     <span class="close-btn" id="close-lightbox">&times;</span>
@@ -95,15 +93,22 @@
       <span class="close-btn" id="close-move-photo">&times;</span>
       <h3 id="move-modal-title">Move Photo</h3>
       <p id="moving-photo-name"></p>
-      <label>Select or type Category:</label>
-      <input list="category-list" id="move-cat-input" placeholder="e.g. Nature" />
+      <label>Select or type target folder:</label>
+      <input list="category-list" id="move-cat-input" placeholder="e.g. Nature/Mountains" />
       <datalist id="category-list"></datalist>
+      <button id="submit-move-photo" class="action-btn primary" style="margin-top:1rem;">Move Here</button>
+    </div>
+  </div>
 
-      <label>Select or type Subcategory:</label>
-      <input list="subcategory-list" id="move-subcat-input" placeholder="e.g. Mountains (or General)" />
-      <datalist id="subcategory-list"></datalist>
-
-      <button id="submit-move-photo" class="action-btn primary">Move Here</button>
+  <!-- Upload Target Modal -->
+  <div id="upload-target-modal" class="custom-modal">
+    <div class="modal-content">
+      <span class="close-btn" id="close-upload-target">&times;</span>
+      <h3>Upload Target</h3>
+      <p id="uploading-photo-name" style="margin-bottom: 1rem; color: var(--text-muted);"></p>
+      <label>Upload to Folder:</label>
+      <input list="category-list" id="upload-cat-input" placeholder="e.g. Vacation/2026" />
+      <button id="submit-upload-btn" class="action-btn primary" style="width: 100%; margin-top: 1rem;">Upload</button>
     </div>
   </div>
 
@@ -131,6 +136,9 @@
     </div>
   </div>
 
+  <!-- Scripts -->
+  <script defer src="face-api.min.js"></script>
   <script src="script.js"></script>
+  <script src="faces.js"></script>
 </body>
 </html>

@@ -1,10 +1,28 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
 
 const app = express();
 const PORT = 3000;
 const PHOTOS_DIR = path.join(__dirname, 'photos');
+
+// Configure multer storage
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    let targetPath = req.body.targetPath || '';
+    if (targetPath === 'Root') targetPath = '';
+    const dest = path.join(PHOTOS_DIR, targetPath);
+    if (!fs.existsSync(dest)) {
+      fs.mkdirSync(dest, { recursive: true });
+    }
+    cb(null, dest);
+  },
+  filename: (req, file, cb) => {
+    cb(null, file.originalname);
+  }
+});
+const upload = multer({ storage });
 
 // Ensure photos directory exists
 if (!fs.existsSync(PHOTOS_DIR)) {
@@ -187,6 +205,19 @@ app.post('/api/photos/delete-batch', (req, res) => {
     res.json({ success: true, results });
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete photos' });
+  }
+});
+
+// Upload Photos Endpoint
+app.post('/api/photos/upload', upload.array('photos'), (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No files uploaded' });
+    }
+    res.json({ success: true, count: req.files.length });
+  } catch (err) {
+    console.error('Upload Error:', err);
+    res.status(500).json({ error: 'Failed to upload photos' });
   }
 });
 
