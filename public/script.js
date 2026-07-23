@@ -13,7 +13,6 @@ const photoCount = document.getElementById('photo-count');
 
 // Edit Mode Elements
 const toggleEditBtn = document.getElementById('toggle-edit-btn');
-const toggleEditBtn = document.getElementById('toggle-edit-btn');
 const editToolbar = document.getElementById('edit-toolbar');
 const selectedCountText = document.getElementById('selected-count');
 const batchRenameBtn = document.getElementById('batch-rename-btn');
