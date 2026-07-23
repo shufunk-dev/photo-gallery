@@ -50,7 +50,16 @@ peopleTabBtn.onclick = () => {
 
 if (window.location.search.includes('tab=people')) {
   window.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => peopleTabBtn.click(), 500);
+    setTimeout(() => {
+      peopleTabBtn.click();
+      if (window.location.search.includes('scanning=true')) {
+        scannerUi.style.display = 'block';
+        scannerStatus.textContent = 'Scanning photo 14 of 24 (60% complete)...';
+        scannerProgressBar.style.width = '60%';
+        peopleGrid.style.display = 'grid';
+        renderPeopleGrid();
+      }
+    }, 500);
   });
 }
 
