@@ -15,6 +15,7 @@ const peopleView = document.getElementById('people-view');
 const galleryTabBtn = document.getElementById('gallery-tab-btn');
 const peopleTabBtn = document.getElementById('people-tab-btn');
 const peopleEditToolbar = document.getElementById('edit-toolbar');
+const rescanLibraryBtn = document.getElementById('rescan-library-btn');
 
 // Initialize Tabs
 galleryTabBtn.onclick = () => {
@@ -76,12 +77,45 @@ async function loadModels() {
   modelsLoaded = true;
 }
 
+rescanLibraryBtn.onclick = async () => {
+  if (isScanning) return;
+  const confirmRescan = confirm('Rescanning will re-evaluate all photos. We will attempt to smartly retain your assigned names. Proceed?');
+  if (!confirmRescan) return;
+  
+  // Hide the grid and show the scanner UI
+  peopleGrid.style.display = 'none';
+  scannerUi.style.display = 'block';
+  
+  await runFaceScan(true);
+};
+
 startScanBtn.onclick = async () => {
   if (isScanning) return;
+  await runFaceScan(false);
+};
+
+async function runFaceScan(isRescan = false) {
   isScanning = true;
   startScanBtn.disabled = true;
+  rescanLibraryBtn.disabled = true;
   
   await loadModels();
+  
+  // Backup named clusters for smart retention
+  const oldClusters = faceDb.clusters || [];
+  const oldNames = faceDb.namedFaces || {};
+  const backupNamedFaces = [];
+  
+  if (isRescan) {
+    for (let cluster of oldClusters) {
+      if (oldNames[cluster.id]) {
+        backupNamedFaces.push({
+          name: oldNames[cluster.id],
+          descriptor: cluster.faces[0].descriptor // Use the representative face descriptor
+        });
+      }
+    }
+  }
   
   try {
     const res = await fetch('/api/photos');
@@ -90,6 +124,8 @@ startScanBtn.onclick = async () => {
   } catch (err) {
     scannerStatus.textContent = "Failed to fetch photos.";
     isScanning = false;
+    startScanBtn.disabled = false;
+    rescanLibraryBtn.disabled = false;
     return;
   }
 
@@ -97,6 +133,8 @@ startScanBtn.onclick = async () => {
   if (totalPhotos === 0) {
     scannerStatus.textContent = "No photos found to scan.";
     isScanning = false;
+    startScanBtn.disabled = false;
+    rescanLibraryBtn.disabled = false;
     return;
   }
   let processed = 0;
@@ -139,14 +177,47 @@ startScanBtn.onclick = async () => {
 
   scannerStatus.textContent = "Clustering faces...";
   clusterFaces(allDetectedFaces);
+  
+  // Smart Name Retention: Match old named faces to new clusters
+  if (isRescan && backupNamedFaces.length > 0) {
+    scannerStatus.textContent = "Restoring known names...";
+    faceDb.namedFaces = {}; // Clear old names
+    
+    for (let newCluster of faceDb.clusters) {
+      let centerArr = new Float32Array(newCluster.faces[0].descriptor);
+      let bestMatchName = null;
+      let minDistance = 0.55; // Must be very similar
+      
+      for (let backup of backupNamedFaces) {
+        let oldArr = new Float32Array(backup.descriptor);
+        let distance = faceapi.euclideanDistance(centerArr, oldArr);
+        if (distance < minDistance) {
+          minDistance = distance;
+          bestMatchName = backup.name;
+        }
+      }
+      
+      if (bestMatchName) {
+        faceDb.namedFaces[newCluster.id] = bestMatchName;
+      }
+    }
+  } else if (!isRescan) {
+    // If it's a first time scan, ensure namedFaces exists
+    faceDb.namedFaces = faceDb.namedFaces || {};
+  }
+  
   await saveFaceDatabase();
   
   scannerStatus.textContent = "Scan complete!";
   setTimeout(() => {
     scannerUi.style.display = 'none';
+    peopleGrid.style.display = 'grid';
     renderPeopleGrid();
+    isScanning = false;
+    startScanBtn.disabled = false;
+    rescanLibraryBtn.disabled = false;
   }, 1000);
-};
+}
 
 function clusterFaces(faces) {
   // Simple clustering
