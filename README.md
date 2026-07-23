@@ -19,7 +19,7 @@ This application allows you to view your photos by reading your local folder str
 
 ## Setup & Running
 1. Clone this repository to your local machine.
-2. Start the server using the provided scripts (they will automatically install dependencies for you):
+2. Start the server using the provided scripts (they will automatically install required dependencies like `express` and `multer` for you):
    - **Windows:** Double-click `start_gallery.bat`.
    - **macOS:** Double-click `start_gallery.command` (you may need to run `chmod +x start_gallery.command` first).
    - **Linux:** Run `./start_gallery.sh` from the terminal (you may need to run `chmod +x start_gallery.sh` first).
