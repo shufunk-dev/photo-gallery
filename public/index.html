@@ -73,7 +73,10 @@
     <span class="close-btn" id="close-lightbox">&times;</span>
     <img class="lightbox-content" id="lightbox-img">
     <div id="lightbox-caption" class="lightbox-caption"></div>
-    <button id="move-photo-btn" class="action-btn move-btn">Move Photo</button>
+    <div style="display: flex; gap: 10px; margin-top: 1.5rem; justify-content: center;">
+      <button id="rename-photo-btn" class="action-btn" style="background-color: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); z-index: 1001;">Rename Photo</button>
+      <button id="move-photo-btn" class="action-btn" style="background-color: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); z-index: 1001;">Move Photo</button>
+    </div>
   </div>
 
   <!-- Create Category Modal -->
@@ -97,6 +100,18 @@
       <input list="category-list" id="move-cat-input" placeholder="e.g. Nature/Mountains" />
       <datalist id="category-list"></datalist>
       <button id="submit-move-photo" class="action-btn primary" style="margin-top:1rem;">Move Here</button>
+    </div>
+  </div>
+
+  <!-- Rename Photo Modal -->
+  <div id="rename-photo-modal" class="custom-modal">
+    <div class="modal-content">
+      <span class="close-btn" id="close-rename-photo">&times;</span>
+      <h3>Rename Photo</h3>
+      <p id="renaming-photo-name" style="margin-bottom: 1rem; color: var(--text-muted);"></p>
+      <label>New Name:</label>
+      <input type="text" id="rename-photo-input" class="modern-input" style="width: 100%; margin-top: 0.5rem;" />
+      <button id="submit-rename-photo" class="action-btn primary" style="margin-top: 1rem; width: 100%;">Rename</button>
     </div>
   </div>
 

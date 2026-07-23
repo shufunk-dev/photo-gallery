@@ -208,6 +208,34 @@ app.post('/api/photos/delete-batch', (req, res) => {
   }
 });
 
+// Rename Photo Endpoint
+app.post('/api/photos/rename', (req, res) => {
+  const { dirPath, oldName, newName } = req.body;
+  if (!oldName || !newName) {
+    return res.status(400).json({ error: 'Missing parameters' });
+  }
+
+  try {
+    const activeDirPath = dirPath === 'Root' ? '' : dirPath;
+    const oldPath = path.join(PHOTOS_DIR, activeDirPath, oldName);
+    const newPath = path.join(PHOTOS_DIR, activeDirPath, newName);
+
+    if (!fs.existsSync(oldPath)) {
+      return res.status(404).json({ error: 'Original photo not found' });
+    }
+    
+    if (fs.existsSync(newPath)) {
+      return res.status(400).json({ error: 'A file with that name already exists' });
+    }
+
+    fs.renameSync(oldPath, newPath);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Rename Error:', err);
+    res.status(500).json({ error: 'Failed to rename photo' });
+  }
+});
+
 // Upload Photos Endpoint
 app.post('/api/photos/upload', upload.array('photos'), (req, res) => {
   try {

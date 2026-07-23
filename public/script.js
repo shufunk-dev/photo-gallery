@@ -28,6 +28,7 @@ const lightboxImg = document.getElementById('lightbox-img');
 const lightboxCaption = document.getElementById('lightbox-caption');
 const closeLightbox = document.getElementById('close-lightbox');
 const movePhotoBtn = document.getElementById('move-photo-btn');
+const renamePhotoBtn = document.getElementById('rename-photo-btn');
 
 // Create Category Modal Elements
 const newCategoryBtn = document.getElementById('new-category-btn');
@@ -46,6 +47,13 @@ const moveSubcatInput = document.getElementById('move-subcat-input');
 const catList = document.getElementById('category-list');
 const subcatList = document.getElementById('subcategory-list');
 const movingPhotoName = document.getElementById('moving-photo-name');
+
+// Rename Photo Modal Elements
+const renamePhotoModal = document.getElementById('rename-photo-modal');
+const closeRenamePhoto = document.getElementById('close-rename-photo');
+const submitRenamePhoto = document.getElementById('submit-rename-photo');
+const renamePhotoInput = document.getElementById('rename-photo-input');
+const renamingPhotoName = document.getElementById('renaming-photo-name');
 
 // Manual Elements
 const openManualBtn = document.getElementById('open-manual-btn');
@@ -94,9 +102,9 @@ function closeAllModals() {
   lightboxModal.classList.remove('active');
   createCatModal.classList.remove('active');
   movePhotoModal.classList.remove('active');
-  deleteConfirmModal.classList.remove('active');
   manualModal.classList.remove('active');
   uploadTargetModal.classList.remove('active');
+  renamePhotoModal.classList.remove('active');
 }
 
 closeLightbox.onclick = closeAllModals;
@@ -106,9 +114,10 @@ closeDeleteConfirm.onclick = closeAllModals;
 cancelDeleteBtn.onclick = closeAllModals;
 closeManual.onclick = closeAllModals;
 closeUploadTarget.onclick = closeAllModals;
+closeRenamePhoto.onclick = closeAllModals;
 
 window.onclick = (e) => {
-  if (e.target === lightboxModal || e.target === createCatModal || e.target === movePhotoModal || e.target === deleteConfirmModal || e.target === manualModal || e.target === uploadTargetModal) {
+  if (e.target === lightboxModal || e.target === createCatModal || e.target === movePhotoModal || e.target === deleteConfirmModal || e.target === manualModal || e.target === uploadTargetModal || e.target === renamePhotoModal) {
     closeAllModals();
   }
 };
@@ -186,7 +195,48 @@ submitUploadBtn.onclick = async () => {
   }
 };
 
-// --- Create Category Logic ---
+renamePhotoBtn.onclick = () => {
+  if (!currentPhotoObj) return;
+  renamingPhotoName.textContent = `Renaming: ${currentPhotoObj.name}`;
+  renamePhotoInput.value = currentPhotoObj.name;
+  renamePhotoModal.classList.add('active');
+};
+
+submitRenamePhoto.onclick = async () => {
+  if (!currentPhotoObj) return;
+  const newName = renamePhotoInput.value.trim();
+  if (!newName) return;
+  if (newName === currentPhotoObj.name) {
+    closeAllModals();
+    return;
+  }
+  
+  // Ensure the extension is preserved if they forgot it, or just use exactly what they typed.
+  // We'll trust what they typed, but maybe add basic validation.
+  
+  try {
+    const res = await fetch('/api/photos/rename', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        dirPath: currentPhotoObj.dirPath,
+        oldName: currentPhotoObj.name,
+        newName: newName
+      })
+    });
+    if (res.ok) {
+      closeAllModals();
+      init();
+    } else {
+      const data = await res.json();
+      alert('Error: ' + data.error);
+    }
+  } catch (err) {
+    alert('Failed to rename photo');
+  }
+};
+
+// --- Move Category Logic ---
 newCategoryBtn.onclick = () => {
   createCatModal.classList.add('active');
   newCatName.focus();
