@@ -135,6 +135,17 @@ body {
   color: var(--text-main);
 }
 
+/* Drag and Drop States */
+.nav-row.dragging {
+  opacity: 0.4;
+}
+
+.nav-item.drag-over > .nav-row {
+  background-color: rgba(99, 102, 241, 0.2);
+  outline: 2px dashed #6366f1;
+  border-radius: 8px;
+}
+
 /* Main Content */
 .main-content {
   flex: 1;

@@ -314,6 +314,24 @@ async function init() {
   }
 }
 
+async function moveCategory(sourceCat, sourceSubcat, targetCat) {
+  try {
+    const res = await fetch('/api/categories/move', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sourceCategory: sourceCat, sourceSubcategory: sourceSubcat, targetCategory: targetCat })
+    });
+    if (res.ok) {
+      init();
+    } else {
+      const data = await res.json();
+      alert('Error: ' + data.error);
+    }
+  } catch (err) {
+    alert('Failed to move category');
+  }
+}
+
 function renderNavigation() {
   categoryNav.innerHTML = '';
 
@@ -329,9 +347,32 @@ function renderNavigation() {
   Object.keys(categoriesTree).forEach(category => {
     const navItem = document.createElement('div');
     navItem.className = 'nav-item';
+    
+    // Drop Target Logic
+    navItem.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      navItem.classList.add('drag-over');
+    });
+    navItem.addEventListener('dragleave', () => navItem.classList.remove('drag-over'));
+    navItem.addEventListener('drop', (e) => {
+      e.preventDefault();
+      navItem.classList.remove('drag-over');
+      const dragData = JSON.parse(e.dataTransfer.getData('text/plain') || '{}');
+      if (!dragData.sourceCategory) return;
+      if (dragData.sourceCategory === category && !dragData.sourceSubcategory) return;
+      moveCategory(dragData.sourceCategory, dragData.sourceSubcategory, category);
+    });
 
     const catRow = document.createElement('div');
     catRow.className = 'nav-row';
+    
+    // Drag Source Logic (Category)
+    catRow.draggable = true;
+    catRow.addEventListener('dragstart', (e) => {
+      catRow.classList.add('dragging');
+      e.dataTransfer.setData('text/plain', JSON.stringify({ sourceCategory: category }));
+    });
+    catRow.addEventListener('dragend', () => catRow.classList.remove('dragging'));
 
     const catBtn = document.createElement('button');
     catBtn.className = 'category-btn';
@@ -365,6 +406,15 @@ function renderNavigation() {
     categoriesTree[category].forEach(subcat => {
       const subRow = document.createElement('div');
       subRow.className = 'nav-row';
+      
+      // Drag Source Logic (Subcategory)
+      subRow.draggable = true;
+      subRow.addEventListener('dragstart', (e) => {
+        subRow.classList.add('dragging');
+        e.dataTransfer.setData('text/plain', JSON.stringify({ sourceCategory: category, sourceSubcategory: subcat }));
+        e.stopPropagation();
+      });
+      subRow.addEventListener('dragend', () => subRow.classList.remove('dragging'));
 
       const subBtn = document.createElement('button');
       subBtn.className = 'subcategory-btn';

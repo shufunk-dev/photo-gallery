@@ -132,6 +132,42 @@ app.post('/api/categories/delete', (req, res) => {
   }
 });
 
+// Move Category Endpoint (Drag and Drop)
+app.post('/api/categories/move', (req, res) => {
+  const { sourceCategory, sourceSubcategory, targetCategory } = req.body;
+  
+  if (!sourceCategory || !targetCategory) {
+    return res.status(400).json({ error: 'Source and target categories are required' });
+  }
+  
+  if (sourceCategory === targetCategory && !sourceSubcategory) {
+    return res.status(400).json({ error: 'Cannot move a category into itself' });
+  }
+
+  try {
+    let sourcePath = path.join(PHOTOS_DIR, sourceCategory);
+    if (sourceSubcategory) {
+      sourcePath = path.join(sourcePath, sourceSubcategory);
+    }
+    
+    const folderToMoveName = sourceSubcategory ? sourceSubcategory : sourceCategory;
+    const targetPath = path.join(PHOTOS_DIR, targetCategory, folderToMoveName);
+
+    if (fs.existsSync(sourcePath)) {
+      if (fs.existsSync(targetPath)) {
+        return res.status(400).json({ error: 'A category with that name already exists in the target location.' });
+      }
+      fs.renameSync(sourcePath, targetPath);
+      res.json({ success: true, message: 'Folder moved successfully' });
+    } else {
+      res.status(404).json({ error: 'Source folder not found' });
+    }
+  } catch (err) {
+    console.error('Error moving folder:', err);
+    res.status(500).json({ error: 'Failed to move folder' });
+  }
+});
+
 // Move Photo Endpoint
 app.post('/api/photos/move', (req, res) => {
   const { filename, oldCategory, oldSubcategory, newCategory, newSubcategory } = req.body;
