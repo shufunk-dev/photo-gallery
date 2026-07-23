@@ -116,6 +116,7 @@ function closeAllModals() {
   uploadTargetModal.classList.remove('active');
   renamePhotoModal.classList.remove('active');
   batchRenameModal.classList.remove('active');
+  deleteConfirmModal.classList.remove('active');
 }
 
 closeLightbox.onclick = closeAllModals;
