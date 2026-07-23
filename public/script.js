@@ -266,6 +266,30 @@ submitDeleteBtn.onclick = async () => {
   }
 };
 
+async function deleteCategory(category, subcategory = null) {
+  const msg = subcategory 
+    ? `Are you sure you want to permanently delete the subcategory "${subcategory}" and ALL photos inside it?`
+    : `Are you sure you want to permanently delete the category "${category}" and ALL photos inside it?`;
+    
+  if (!confirm(msg)) return;
+
+  try {
+    const res = await fetch('/api/categories/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category, subcategory })
+    });
+    if (res.ok) {
+      init();
+    } else {
+      const data = await res.json();
+      alert('Error: ' + data.error);
+    }
+  } catch (err) {
+    alert('Failed to delete category');
+  }
+}
+
 // --- Initialization & Render ---
 async function init() {
   try {
@@ -306,9 +330,24 @@ function renderNavigation() {
     const navItem = document.createElement('div');
     navItem.className = 'nav-item';
 
+    const catRow = document.createElement('div');
+    catRow.className = 'nav-row';
+
     const catBtn = document.createElement('button');
     catBtn.className = 'category-btn';
     catBtn.textContent = category;
+    
+    const catDelBtn = document.createElement('button');
+    catDelBtn.className = 'delete-cat-btn';
+    catDelBtn.innerHTML = '🗑️';
+    catDelBtn.title = 'Delete Category';
+    catDelBtn.onclick = (e) => {
+      e.stopPropagation();
+      deleteCategory(category);
+    };
+
+    catRow.appendChild(catBtn);
+    catRow.appendChild(catDelBtn);
     
     const subcatsContainer = document.createElement('div');
     subcatsContainer.className = 'subcategories';
@@ -324,6 +363,9 @@ function renderNavigation() {
     };
 
     categoriesTree[category].forEach(subcat => {
+      const subRow = document.createElement('div');
+      subRow.className = 'nav-row';
+
       const subBtn = document.createElement('button');
       subBtn.className = 'subcategory-btn';
       subBtn.textContent = subcat;
@@ -333,10 +375,22 @@ function renderNavigation() {
         const filtered = allPhotos.filter(p => p.category === category && p.subcategory === subcat);
         renderGallery(filtered, `${category} / ${subcat}`);
       };
-      subcatsContainer.appendChild(subBtn);
+
+      const subDelBtn = document.createElement('button');
+      subDelBtn.className = 'delete-cat-btn';
+      subDelBtn.innerHTML = '🗑️';
+      subDelBtn.title = 'Delete Subcategory';
+      subDelBtn.onclick = (e) => {
+        e.stopPropagation();
+        deleteCategory(category, subcat);
+      };
+
+      subRow.appendChild(subBtn);
+      subRow.appendChild(subDelBtn);
+      subcatsContainer.appendChild(subRow);
     });
 
-    navItem.appendChild(catBtn);
+    navItem.appendChild(catRow);
     if (categoriesTree[category].length > 0) {
       navItem.appendChild(subcatsContainer);
     }

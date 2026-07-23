@@ -107,6 +107,31 @@ app.post('/api/categories', (req, res) => {
   }
 });
 
+// Delete Category Endpoint
+app.post('/api/categories/delete', (req, res) => {
+  const { category, subcategory } = req.body;
+  if (!category) {
+    return res.status(400).json({ error: 'Category is required' });
+  }
+
+  try {
+    let targetPath = path.join(PHOTOS_DIR, category);
+    if (subcategory) {
+      targetPath = path.join(targetPath, subcategory);
+    }
+
+    if (fs.existsSync(targetPath)) {
+      fs.rmSync(targetPath, { recursive: true, force: true });
+      res.json({ success: true, message: 'Folder deleted successfully' });
+    } else {
+      res.status(404).json({ error: 'Folder not found' });
+    }
+  } catch (err) {
+    console.error('Error deleting folder:', err);
+    res.status(500).json({ error: 'Failed to delete folder' });
+  }
+});
+
 // Move Photo Endpoint
 app.post('/api/photos/move', (req, res) => {
   const { filename, oldCategory, oldSubcategory, newCategory, newSubcategory } = req.body;

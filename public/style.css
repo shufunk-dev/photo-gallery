@@ -69,6 +69,33 @@ body {
   font-family: inherit;
 }
 
+.nav-row {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.delete-cat-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.2s, color 0.2s;
+  position: absolute;
+  right: 5px;
+  font-size: 1rem;
+}
+
+.nav-row:hover .delete-cat-btn {
+  opacity: 1;
+}
+
+.delete-cat-btn:hover {
+  color: #ef4444;
+}
+
 .category-btn:hover {
   background-color: var(--card-bg);
 }
