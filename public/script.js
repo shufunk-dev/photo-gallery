@@ -128,11 +128,13 @@ submitCreateCat.onclick = async () => {
   const subcat = newSubcatName.value.trim();
   if (!cat) return alert('Category name is required');
 
+  const dirPath = subcat ? `${cat}/${subcat}` : cat;
+
   try {
     const res = await fetch('/api/categories', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ category: cat, subcategory: subcat })
+      body: JSON.stringify({ dirPath })
     });
     if (res.ok) {
       newCatName.value = '';
@@ -149,11 +151,24 @@ submitCreateCat.onclick = async () => {
 };
 
 // --- Move Photo Logic ---
+// Flatten recursive tree to get all paths for the dropdown
+function flattenPaths(tree, currentPath = '', result = []) {
+  for (const key of Object.keys(tree)) {
+    const p = currentPath ? `${currentPath}/${key}` : key;
+    result.push(p);
+    flattenPaths(tree[key], p, result);
+  }
+  return result;
+}
+
 function openMoveModal() {
   catList.innerHTML = '';
-  Object.keys(categoriesTree).forEach(c => {
+  subcatList.innerHTML = '';
+  const allPaths = flattenPaths(categoriesTree);
+  
+  allPaths.forEach(p => {
     const opt = document.createElement('option');
-    opt.value = c;
+    opt.value = p;
     catList.appendChild(opt);
   });
   
@@ -161,14 +176,10 @@ function openMoveModal() {
     document.getElementById('move-modal-title').textContent = `Move ${selectedPhotos.size} Photos`;
     movingPhotoName.textContent = `Batch moving ${selectedPhotos.size} items`;
     moveCatInput.value = '';
-    moveSubcatInput.value = '';
-    updateSubcatDatalist('');
   } else {
     document.getElementById('move-modal-title').textContent = `Move Photo`;
     movingPhotoName.textContent = `Moving: ${currentPhotoObj.name}`;
-    moveCatInput.value = currentPhotoObj.category;
-    moveSubcatInput.value = currentPhotoObj.subcategory;
-    updateSubcatDatalist(currentPhotoObj.category);
+    moveCatInput.value = currentPhotoObj.dirPath === 'Root' ? '' : currentPhotoObj.dirPath;
   }
   
   movePhotoModal.classList.add('active');
@@ -185,25 +196,15 @@ batchMoveBtn.onclick = () => {
   openMoveModal();
 };
 
-moveCatInput.addEventListener('input', () => {
-  updateSubcatDatalist(moveCatInput.value);
-});
-
-function updateSubcatDatalist(cat) {
-  subcatList.innerHTML = '';
-  if (categoriesTree[cat]) {
-    categoriesTree[cat].forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s;
-      subcatList.appendChild(opt);
-    });
-  }
-}
-
 submitMovePhoto.onclick = async () => {
-  const newCat = moveCatInput.value.trim();
+  let newDirPath = moveCatInput.value.trim();
+  // Support legacy subcategory input field if they typed it
   const newSubcat = moveSubcatInput.value.trim();
-  if (!newCat) return alert('Target category is required');
+  if (newSubcat) {
+    newDirPath = newDirPath ? `${newDirPath}/${newSubcat}` : newSubcat;
+  }
+
+  if (!newDirPath) return alert('Target path is required');
 
   const photosToMove = isEditMode ? Array.from(selectedPhotos) : [currentPhotoObj];
 
@@ -212,9 +213,8 @@ submitMovePhoto.onclick = async () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        photos: photosToMove.map(p => ({ filename: p.name, oldCategory: p.category, oldSubcategory: p.subcategory })),
-        newCategory: newCat,
-        newSubcategory: newSubcat
+        photos: photosToMove.map(p => ({ filename: p.name, oldDirPath: p.dirPath })),
+        newDirPath: newDirPath
       })
     });
     
@@ -248,7 +248,7 @@ submitDeleteBtn.onclick = async () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        photos: photosToDelete.map(p => ({ filename: p.name, oldCategory: p.category, oldSubcategory: p.subcategory }))
+        photos: photosToDelete.map(p => ({ filename: p.name, oldDirPath: p.dirPath }))
       })
     });
     
@@ -266,18 +266,15 @@ submitDeleteBtn.onclick = async () => {
   }
 };
 
-async function deleteCategory(category, subcategory = null) {
-  const msg = subcategory 
-    ? `Are you sure you want to permanently delete the subcategory "${subcategory}" and ALL photos inside it?`
-    : `Are you sure you want to permanently delete the category "${category}" and ALL photos inside it?`;
-    
-  if (!confirm(msg)) return;
+// --- Recursive Category Actions ---
+async function deleteCategory(dirPath) {
+  if (!confirm(`Are you sure you want to permanently delete "${dirPath}" and ALL photos inside it?`)) return;
 
   try {
     const res = await fetch('/api/categories/delete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ category, subcategory })
+      body: JSON.stringify({ dirPath })
     });
     if (res.ok) {
       init();
@@ -286,7 +283,25 @@ async function deleteCategory(category, subcategory = null) {
       alert('Error: ' + data.error);
     }
   } catch (err) {
-    alert('Failed to delete category');
+    alert('Failed to delete folder');
+  }
+}
+
+async function moveCategory(sourcePath, targetPath) {
+  try {
+    const res = await fetch('/api/categories/move', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sourcePath, targetPath })
+    });
+    if (res.ok) {
+      init();
+    } else {
+      const data = await res.json();
+      alert('Error: ' + data.error);
+    }
+  } catch (err) {
+    alert('Failed to move folder');
   }
 }
 
@@ -306,7 +321,7 @@ async function init() {
     if (activeBtn && activeBtn.textContent !== 'All Photos') {
        activeBtn.click();
     } else {
-       renderGallery(allPhotos, 'All Photos');
+       renderGallery(allPhotos, 'All Photos', 'All Photos');
     }
   } catch (err) {
     console.error('Failed to load photos', err);
@@ -314,155 +329,138 @@ async function init() {
   }
 }
 
-async function moveCategory(sourceCat, sourceSubcat, targetCat) {
-  try {
-    const res = await fetch('/api/categories/move', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sourceCategory: sourceCat, sourceSubcategory: sourceSubcat, targetCategory: targetCat })
-    });
-    if (res.ok) {
-      init();
-    } else {
-      const data = await res.json();
-      alert('Error: ' + data.error);
-    }
-  } catch (err) {
-    alert('Failed to move category');
-  }
-}
-
 function renderNavigation() {
   categoryNav.innerHTML = '';
+
+  // Drop target for "Root" (moving a category back to the top level)
+  const rootDropZone = document.createElement('div');
+  rootDropZone.className = 'nav-item';
+  rootDropZone.innerHTML = '<div style="height: 10px; width: 100%;"></div>';
+  rootDropZone.addEventListener('dragover', e => { e.preventDefault(); rootDropZone.classList.add('drag-over'); });
+  rootDropZone.addEventListener('dragleave', () => rootDropZone.classList.remove('drag-over'));
+  rootDropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    rootDropZone.classList.remove('drag-over');
+    const sourcePath = e.dataTransfer.getData('text/plain');
+    if (sourcePath && sourcePath.includes('/')) {
+      moveCategory(sourcePath, '');
+    }
+  });
 
   const allBtn = document.createElement('button');
   allBtn.className = 'category-btn active';
   allBtn.textContent = 'All Photos';
   allBtn.onclick = () => {
     setActiveNav(allBtn);
-    renderGallery(allPhotos, 'All Photos');
+    renderGallery(allPhotos, 'All Photos', 'All Photos');
   };
+  
+  categoryNav.appendChild(rootDropZone);
   categoryNav.appendChild(allBtn);
 
-  Object.keys(categoriesTree).forEach(category => {
+  renderTree(categoriesTree, categoryNav, '');
+}
+
+function renderTree(node, parentEl, currentPath, depth = 0) {
+  Object.keys(node).forEach(key => {
+    const dirPath = currentPath ? `${currentPath}/${key}` : key;
+    
     const navItem = document.createElement('div');
     navItem.className = 'nav-item';
-    
+    navItem.style.marginLeft = `${depth * 15}px`; // Recursive indentation
+
     // Drop Target Logic
     navItem.addEventListener('dragover', (e) => {
       e.preventDefault();
+      e.stopPropagation();
       navItem.classList.add('drag-over');
     });
-    navItem.addEventListener('dragleave', () => navItem.classList.remove('drag-over'));
+    navItem.addEventListener('dragleave', (e) => {
+      e.stopPropagation();
+      navItem.classList.remove('drag-over');
+    });
     navItem.addEventListener('drop', (e) => {
       e.preventDefault();
+      e.stopPropagation();
       navItem.classList.remove('drag-over');
-      const dragData = JSON.parse(e.dataTransfer.getData('text/plain') || '{}');
-      if (!dragData.sourceCategory) return;
-      if (dragData.sourceCategory === category && !dragData.sourceSubcategory) return;
-      moveCategory(dragData.sourceCategory, dragData.sourceSubcategory, category);
+      const sourcePath = e.dataTransfer.getData('text/plain');
+      if (!sourcePath) return;
+      if (sourcePath === dirPath || dirPath.startsWith(sourcePath + '/')) return; // Prevent dropping into self
+      moveCategory(sourcePath, dirPath);
     });
 
     const catRow = document.createElement('div');
     catRow.className = 'nav-row';
     
-    // Drag Source Logic (Category)
+    // Drag Source Logic
     catRow.draggable = true;
     catRow.addEventListener('dragstart', (e) => {
       catRow.classList.add('dragging');
-      e.dataTransfer.setData('text/plain', JSON.stringify({ sourceCategory: category }));
+      e.dataTransfer.setData('text/plain', dirPath);
+      e.stopPropagation();
     });
     catRow.addEventListener('dragend', () => catRow.classList.remove('dragging'));
 
-    const catBtn = document.createElement('button');
-    catBtn.className = 'category-btn';
-    catBtn.textContent = category;
+    const btn = document.createElement('button');
+    btn.className = depth === 0 ? 'category-btn' : 'subcategory-btn';
+    btn.textContent = key;
     
-    const catDelBtn = document.createElement('button');
-    catDelBtn.className = 'delete-cat-btn';
-    catDelBtn.innerHTML = '🗑️';
-    catDelBtn.title = 'Delete Category';
-    catDelBtn.onclick = (e) => {
+    const delBtn = document.createElement('button');
+    delBtn.className = 'delete-cat-btn';
+    delBtn.innerHTML = '🗑️';
+    delBtn.title = 'Delete Folder';
+    delBtn.onclick = (e) => {
       e.stopPropagation();
-      deleteCategory(category);
+      deleteCategory(dirPath);
     };
 
-    catRow.appendChild(catBtn);
-    catRow.appendChild(catDelBtn);
+    catRow.appendChild(btn);
+    catRow.appendChild(delBtn);
     
-    const subcatsContainer = document.createElement('div');
-    subcatsContainer.className = 'subcategories';
+    const childrenContainer = document.createElement('div');
+    childrenContainer.className = 'subcategories';
 
-    catBtn.onclick = () => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
       const isExpanded = navItem.classList.contains('expanded');
-      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('expanded'));
+      
+      // If holding shift, don't collapse others, otherwise collapse siblings
+      if (!e.shiftKey && depth === 0) {
+         document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('expanded'));
+      }
+      
       if (!isExpanded) navItem.classList.add('expanded');
 
-      setActiveNav(catBtn);
-      const filtered = allPhotos.filter(p => p.category === category);
-      renderGallery(filtered, category);
+      setActiveNav(btn);
+      
+      // Filter photos to only those that start with this dirPath
+      const filtered = allPhotos.filter(p => p.dirPath === dirPath || p.dirPath.startsWith(dirPath + '/'));
+      renderGallery(filtered, dirPath, key);
     };
 
-    categoriesTree[category].forEach(subcat => {
-      const subRow = document.createElement('div');
-      subRow.className = 'nav-row';
-      
-      // Drag Source Logic (Subcategory)
-      subRow.draggable = true;
-      subRow.addEventListener('dragstart', (e) => {
-        subRow.classList.add('dragging');
-        e.dataTransfer.setData('text/plain', JSON.stringify({ sourceCategory: category, sourceSubcategory: subcat }));
-        e.stopPropagation();
-      });
-      subRow.addEventListener('dragend', () => subRow.classList.remove('dragging'));
-
-      const subBtn = document.createElement('button');
-      subBtn.className = 'subcategory-btn';
-      subBtn.textContent = subcat;
-      subBtn.onclick = (e) => {
-        e.stopPropagation();
-        setActiveNav(subBtn, true);
-        const filtered = allPhotos.filter(p => p.category === category && p.subcategory === subcat);
-        renderGallery(filtered, `${category} / ${subcat}`);
-      };
-
-      const subDelBtn = document.createElement('button');
-      subDelBtn.className = 'delete-cat-btn';
-      subDelBtn.innerHTML = '🗑️';
-      subDelBtn.title = 'Delete Subcategory';
-      subDelBtn.onclick = (e) => {
-        e.stopPropagation();
-        deleteCategory(category, subcat);
-      };
-
-      subRow.appendChild(subBtn);
-      subRow.appendChild(subDelBtn);
-      subcatsContainer.appendChild(subRow);
-    });
-
     navItem.appendChild(catRow);
-    if (categoriesTree[category].length > 0) {
-      navItem.appendChild(subcatsContainer);
+    
+    if (Object.keys(node[key]).length > 0) {
+      renderTree(node[key], childrenContainer, dirPath, depth + 1);
+      navItem.appendChild(childrenContainer);
     }
-    categoryNav.appendChild(navItem);
+    
+    parentEl.appendChild(navItem);
   });
 }
 
-function setActiveNav(button, isSub = false) {
+function setActiveNav(button) {
   document.querySelectorAll('.category-btn, .subcategory-btn').forEach(btn => btn.classList.remove('active'));
   button.classList.add('active');
 }
 
-function renderGallery(photos, title) {
-  currentViewTitle.textContent = title;
+function renderGallery(photos, title, shortTitle) {
+  currentViewTitle.textContent = shortTitle || title;
   photoCount.textContent = `${photos.length} photo${photos.length !== 1 ? 's' : ''}`;
   galleryGrid.innerHTML = '';
   
-  // Also clear selectedPhotos if they were looking at a different category and clicked away
-  // Let's just keep selected photos across categories for mass moving! So don't clear it here.
-
   if (photos.length === 0) {
-    galleryGrid.innerHTML = '<div class="loading">No photos found in this category.</div>';
+    galleryGrid.innerHTML = '<div class="loading">No photos found in this folder.</div>';
     return;
   }
 
@@ -522,4 +520,5 @@ function renderGallery(photos, title) {
   });
 }
 
+// Start app
 init();

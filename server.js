@@ -11,72 +11,48 @@ if (!fs.existsSync(PHOTOS_DIR)) {
   fs.mkdirSync(PHOTOS_DIR);
 }
 
-// Serve static files (frontend)
 app.use(express.static(path.join(__dirname, 'public')));
-// Serve photos directory directly to access images via /photos/...
 app.use('/photos', express.static(PHOTOS_DIR));
-// Parse JSON bodies
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 
 // Helper function to recursively read photos directory
 function getPhotosInfo() {
   const photos = [];
-  const categories = {};
+  const categories = {}; // Will be a nested tree
 
-  try {
-    const categoryDirs = fs.readdirSync(PHOTOS_DIR, { withFileTypes: true })
-      .filter(dirent => dirent.isDirectory());
+  function walkDir(currentPath, treeNode, relativePath) {
+    let items;
+    try {
+      items = fs.readdirSync(currentPath, { withFileTypes: true });
+    } catch (e) {
+      return;
+    }
 
-    for (const catDir of categoryDirs) {
-      const catName = catDir.name;
-      categories[catName] = [];
-      const catPath = path.join(PHOTOS_DIR, catName);
+    for (const item of items) {
+      if (item.name === '.gitkeep') continue;
+      
+      const fullPath = path.join(currentPath, item.name);
+      const itemRelativePath = relativePath ? `${relativePath}/${item.name}` : item.name;
 
-      const subCategoryDirs = fs.readdirSync(catPath, { withFileTypes: true });
-
-      for (const subDir of subCategoryDirs) {
-        if (subDir.isDirectory()) {
-          const subCatName = subDir.name;
-          categories[catName].push(subCatName);
-          const subCatPath = path.join(catPath, subCatName);
-
-          const files = fs.readdirSync(subCatPath, { withFileTypes: true });
-          for (const file of files) {
-            if (file.isFile() && file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-              const filePath = path.join(subCatPath, file.name);
-              const stats = fs.statSync(filePath);
-              
-              photos.push({
-                name: file.name,
-                category: catName,
-                subcategory: subCatName,
-                url: `/photos/${encodeURIComponent(catName)}/${encodeURIComponent(subCatName)}/${encodeURIComponent(file.name)}`,
-                date: stats.birthtimeMs || stats.mtimeMs
-              });
-            }
-          }
-        } else if (subDir.isFile() && subDir.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-              // Handle photos that are directly inside a category
-              const filePath = path.join(catPath, subDir.name);
-              const stats = fs.statSync(filePath);
-              
-              photos.push({
-                name: subDir.name,
-                category: catName,
-                subcategory: 'General',
-                url: `/photos/${encodeURIComponent(catName)}/${encodeURIComponent(subDir.name)}`,
-                date: stats.birthtimeMs || stats.mtimeMs
-              });
-        }
+      if (item.isDirectory()) {
+        treeNode[item.name] = {};
+        walkDir(fullPath, treeNode[item.name], itemRelativePath);
+      } else if (item.isFile() && item.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+        const stats = fs.statSync(fullPath);
+        const urlSegments = itemRelativePath.split('/').map(seg => encodeURIComponent(seg));
+        
+        photos.push({
+          name: item.name,
+          dirPath: relativePath || 'Root', // Top-level files go in 'Root' visually
+          url: `/photos/${urlSegments.join('/')}`,
+          date: stats.birthtimeMs || stats.mtimeMs
+        });
       }
     }
-  } catch (error) {
-    console.error('Error reading photos directory:', error);
   }
 
-  // Sort photos by date descending (newest first)
+  walkDir(PHOTOS_DIR, categories, '');
   photos.sort((a, b) => b.date - a.date);
-
   return { photos, categories };
 }
 
@@ -85,243 +61,174 @@ app.get('/api/photos', (req, res) => {
   res.json(data);
 });
 
-// Create Category Endpoint
 app.post('/api/categories', (req, res) => {
-  const { category, subcategory } = req.body;
-  if (!category) return res.status(400).json({ error: 'Category is required' });
+  const { dirPath } = req.body;
+  if (!dirPath) return res.status(400).json({ error: 'Path is required' });
 
   try {
-    let targetPath = path.join(PHOTOS_DIR, category);
-    if (subcategory) {
-      targetPath = path.join(targetPath, subcategory);
-    }
-    
-    // Create folder safely (recursive creates parent folders if missing)
+    const targetPath = path.join(PHOTOS_DIR, dirPath);
     if (!fs.existsSync(targetPath)) {
       fs.mkdirSync(targetPath, { recursive: true });
     }
-    res.json({ success: true, message: 'Folder created successfully' });
+    res.json({ success: true });
   } catch (err) {
-    console.error('Error creating folder:', err);
     res.status(500).json({ error: 'Failed to create folder' });
   }
 });
 
-// Delete Category Endpoint
 app.post('/api/categories/delete', (req, res) => {
-  const { category, subcategory } = req.body;
-  if (!category) {
-    return res.status(400).json({ error: 'Category is required' });
-  }
+  const { dirPath } = req.body;
+  if (!dirPath) return res.status(400).json({ error: 'Path is required' });
 
   try {
-    let targetPath = path.join(PHOTOS_DIR, category);
-    if (subcategory) {
-      targetPath = path.join(targetPath, subcategory);
-    }
-
+    const targetPath = path.join(PHOTOS_DIR, dirPath);
     if (fs.existsSync(targetPath)) {
       fs.rmSync(targetPath, { recursive: true, force: true });
-      res.json({ success: true, message: 'Folder deleted successfully' });
+      res.json({ success: true });
     } else {
       res.status(404).json({ error: 'Folder not found' });
     }
   } catch (err) {
-    console.error('Error deleting folder:', err);
     res.status(500).json({ error: 'Failed to delete folder' });
   }
 });
 
-// Move Category Endpoint (Drag and Drop)
 app.post('/api/categories/move', (req, res) => {
-  const { sourceCategory, sourceSubcategory, targetCategory } = req.body;
-  
-  if (!sourceCategory || !targetCategory) {
-    return res.status(400).json({ error: 'Source and target categories are required' });
-  }
-  
-  if (sourceCategory === targetCategory && !sourceSubcategory) {
-    return res.status(400).json({ error: 'Cannot move a category into itself' });
+  const { sourcePath, targetPath } = req.body;
+  if (!sourcePath || targetPath === undefined) {
+    return res.status(400).json({ error: 'Paths are required' });
   }
 
   try {
-    let sourcePath = path.join(PHOTOS_DIR, sourceCategory);
-    if (sourceSubcategory) {
-      sourcePath = path.join(sourcePath, sourceSubcategory);
-    }
-    
-    const folderToMoveName = sourceSubcategory ? sourceSubcategory : sourceCategory;
-    const targetPath = path.join(PHOTOS_DIR, targetCategory, folderToMoveName);
+    const absSourcePath = path.join(PHOTOS_DIR, sourcePath);
+    const folderName = path.basename(absSourcePath);
+    const absTargetPath = targetPath === '' 
+      ? path.join(PHOTOS_DIR, folderName) 
+      : path.join(PHOTOS_DIR, targetPath, folderName);
 
-    if (fs.existsSync(sourcePath)) {
-      if (fs.existsSync(targetPath)) {
-        return res.status(400).json({ error: 'A category with that name already exists in the target location.' });
+    if (fs.existsSync(absSourcePath)) {
+      if (fs.existsSync(absTargetPath)) {
+        return res.status(400).json({ error: 'Folder already exists in target location.' });
       }
-      fs.renameSync(sourcePath, targetPath);
-      res.json({ success: true, message: 'Folder moved successfully' });
+      fs.renameSync(absSourcePath, absTargetPath);
+      res.json({ success: true });
     } else {
-      res.status(404).json({ error: 'Source folder not found' });
+      res.status(404).json({ error: 'Source not found' });
     }
   } catch (err) {
-    console.error('Error moving folder:', err);
     res.status(500).json({ error: 'Failed to move folder' });
   }
 });
 
-// Move Photo Endpoint
 app.post('/api/photos/move', (req, res) => {
-  const { filename, oldCategory, oldSubcategory, newCategory, newSubcategory } = req.body;
-  
-  if (!filename || !oldCategory || !newCategory) {
-    return res.status(400).json({ error: 'Missing required parameters' });
+  const { filename, oldDirPath, newDirPath } = req.body;
+  if (!filename || oldDirPath === undefined || newDirPath === undefined) {
+    return res.status(400).json({ error: 'Missing parameters' });
   }
 
   try {
-    // Construct old path
-    let oldPath = path.join(PHOTOS_DIR, oldCategory);
-    if (oldSubcategory && oldSubcategory !== 'General') {
-      oldPath = path.join(oldPath, oldSubcategory);
-    }
-    oldPath = path.join(oldPath, filename);
+    const oldPath = path.join(PHOTOS_DIR, oldDirPath === 'Root' ? '' : oldDirPath, filename);
+    const newDir = path.join(PHOTOS_DIR, newDirPath === 'Root' ? '' : newDirPath);
+    fs.mkdirSync(newDir, { recursive: true });
+    const newPath = path.join(newDir, filename);
 
-    // Construct new path
-    let newPath = path.join(PHOTOS_DIR, newCategory);
-    if (newSubcategory && newSubcategory !== 'General') {
-      newPath = path.join(newPath, newSubcategory);
-    }
-    
-    // Ensure destination exists
-    if (!fs.existsSync(newPath)) {
-      fs.mkdirSync(newPath, { recursive: true });
-    }
-    
-    newPath = path.join(newPath, filename);
-
-    // Move file
     if (fs.existsSync(oldPath)) {
       fs.renameSync(oldPath, newPath);
-      res.json({ success: true, message: 'Photo moved successfully' });
+      res.json({ success: true });
     } else {
       res.status(404).json({ error: 'Original photo not found' });
     }
   } catch (err) {
-    console.error('Error moving photo:', err);
     res.status(500).json({ error: 'Failed to move photo' });
   }
 });
 
-// Move Batch Endpoint
 app.post('/api/photos/move-batch', (req, res) => {
-  const { photos, newCategory, newSubcategory } = req.body;
-  if (!photos || !Array.isArray(photos) || !newCategory) {
-    return res.status(400).json({ error: 'Missing required parameters' });
+  const { photos, newDirPath } = req.body;
+  if (!photos || !Array.isArray(photos) || newDirPath === undefined) {
+    return res.status(400).json({ error: 'Missing parameters' });
   }
 
   try {
-    // Construct new destination path
-    let newPathDir = path.join(PHOTOS_DIR, newCategory);
-    if (newSubcategory && newSubcategory !== 'General') {
-      newPathDir = path.join(newPathDir, newSubcategory);
-    }
-    if (!fs.existsSync(newPathDir)) {
-      fs.mkdirSync(newPathDir, { recursive: true });
-    }
+    const newDir = path.join(PHOTOS_DIR, newDirPath === 'Root' ? '' : newDirPath);
+    fs.mkdirSync(newDir, { recursive: true });
 
     const results = [];
     for (const p of photos) {
-      let oldPath = path.join(PHOTOS_DIR, p.oldCategory);
-      if (p.oldSubcategory && p.oldSubcategory !== 'General') {
-        oldPath = path.join(oldPath, p.oldSubcategory);
-      }
-      oldPath = path.join(oldPath, p.filename);
-      let newPath = path.join(newPathDir, p.filename);
+      const oldPath = path.join(PHOTOS_DIR, p.oldDirPath === 'Root' ? '' : p.oldDirPath, p.filename);
+      const newPath = path.join(newDir, p.filename);
 
       if (fs.existsSync(oldPath)) {
         fs.renameSync(oldPath, newPath);
         results.push({ filename: p.filename, status: 'moved' });
-      } else {
-        results.push({ filename: p.filename, status: 'not_found' });
       }
     }
     res.json({ success: true, results });
   } catch (err) {
-    console.error('Error moving batch:', err);
     res.status(500).json({ error: 'Failed to move photos' });
   }
 });
 
-// Delete Batch Endpoint
 app.post('/api/photos/delete-batch', (req, res) => {
   const { photos } = req.body;
   if (!photos || !Array.isArray(photos)) {
-    return res.status(400).json({ error: 'Missing required parameters' });
+    return res.status(400).json({ error: 'Missing parameters' });
   }
 
   try {
     const results = [];
     for (const p of photos) {
-      let oldPath = path.join(PHOTOS_DIR, p.oldCategory);
-      if (p.oldSubcategory && p.oldSubcategory !== 'General') {
-        oldPath = path.join(oldPath, p.oldSubcategory);
-      }
-      oldPath = path.join(oldPath, p.filename);
-
+      const oldPath = path.join(PHOTOS_DIR, p.oldDirPath === 'Root' ? '' : p.oldDirPath, p.filename);
       if (fs.existsSync(oldPath)) {
         fs.unlinkSync(oldPath);
         results.push({ filename: p.filename, status: 'deleted' });
-      } else {
-        results.push({ filename: p.filename, status: 'not_found' });
       }
     }
     res.json({ success: true, results });
   } catch (err) {
-    console.error('Error deleting batch:', err);
     res.status(500).json({ error: 'Failed to delete photos' });
   }
 });
 
-// --- Faces Database ---
+// Faces Database
 const FACES_DB_PATH = path.join(__dirname, 'faces.json');
 
-// Get Faces Database
 app.get('/api/faces', (req, res) => {
   if (fs.existsSync(FACES_DB_PATH)) {
     try {
       const data = JSON.parse(fs.readFileSync(FACES_DB_PATH, 'utf-8'));
       res.json(data);
     } catch (e) {
-      res.status(500).json({ error: 'Failed to read faces database' });
+      res.status(500).json({ error: 'Failed to read faces db' });
     }
   } else {
     res.json({ clusters: [], namedFaces: {} });
   }
 });
 
-// Update Faces Database
 app.post('/api/faces', (req, res) => {
   try {
     fs.writeFileSync(FACES_DB_PATH, JSON.stringify(req.body, null, 2), 'utf-8');
     res.json({ success: true });
   } catch (e) {
-    console.error('Error saving faces database:', e);
-    res.status(500).json({ error: 'Failed to save faces database' });
+    res.status(500).json({ error: 'Failed to save faces db' });
   }
 });
 
-// Serve Manual HTML
 app.get('/api/manual', (req, res) => {
-  try {
-    const { marked } = require('marked');
-    const manualPath = path.join(__dirname, 'docs', 'manual.md');
-    if (!fs.existsSync(manualPath)) {
-      return res.status(404).json({ error: 'Manual not found' });
-    }
-    const mdContent = fs.readFileSync(manualPath, 'utf-8');
-    const htmlContent = marked(mdContent);
-    res.json({ html: htmlContent });
-  } catch (err) {
-    console.error('Error serving manual:', err);
-    res.status(500).json({ error: 'Failed to generate manual' });
+  const manualPath = path.join(__dirname, 'docs', 'manual.md');
+  if (fs.existsSync(manualPath)) {
+    const md = fs.readFileSync(manualPath, 'utf-8');
+    let html = md.replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                 .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                 .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                 .replace(/\*\*(.*)\*\*/gim, '<b>$1</b>')
+                 .replace(/\*(.*)\*/gim, '<i>$1</i>')
+                 .replace(/`(.*?)`/gim, '<code>$1</code>')
+                 .replace(/\n$/gim, '<br />');
+    res.json({ html });
+  } else {
+    res.status(404).json({ error: 'Manual not found' });
   }
 });
 

@@ -101,7 +101,7 @@ startScanBtn.onclick = async () => {
   }
   let processed = 0;
   
-  // We will store flat array of detected faces: { descriptor, filename, category, subcategory }
+  // We will store flat array of detected faces
   const allDetectedFaces = [];
 
   for (let photo of allPhotosCache) {
@@ -110,11 +110,7 @@ startScanBtn.onclick = async () => {
     scannerProgressBar.style.width = `${(processed / totalPhotos) * 100}%`;
 
     const img = new Image();
-    let imgPath = `/photos/${encodeURIComponent(photo.category)}`;
-    if (photo.subcategory !== 'General') {
-      imgPath += `/${encodeURIComponent(photo.subcategory)}`;
-    }
-    imgPath += `/${encodeURIComponent(photo.name)}`;
+    const imgPath = photo.url;
     
     img.crossOrigin = "anonymous";
     img.src = imgPath;
@@ -125,10 +121,9 @@ startScanBtn.onclick = async () => {
           const detections = await faceapi.detectAllFaces(img).withFaceLandmarks().withFaceDescriptors();
           for (let det of detections) {
             allDetectedFaces.push({
-              descriptor: Array.from(det.descriptor), // Convert Float32Array to standard array for JSON saving
+              descriptor: Array.from(det.descriptor),
               filename: photo.name,
-              category: photo.category,
-              subcategory: photo.subcategory,
+              dirPath: photo.dirPath,
               imgPath: imgPath,
               box: det.detection.box
             });
