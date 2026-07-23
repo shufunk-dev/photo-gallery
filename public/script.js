@@ -433,8 +433,8 @@ function renderTree(node, parentEl, currentPath, depth = 0) {
 
       setActiveNav(btn);
       
-      // Filter photos to only those that start with this dirPath
-      const filtered = allPhotos.filter(p => p.dirPath === dirPath || p.dirPath.startsWith(dirPath + '/'));
+      // Filter photos to only those exactly in this dirPath (do not include subfolders)
+      const filtered = allPhotos.filter(p => p.dirPath === dirPath);
       renderGallery(filtered, dirPath, key);
     };
 
