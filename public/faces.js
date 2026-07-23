@@ -22,8 +22,13 @@ galleryTabBtn.onclick = () => {
   peopleView.style.display = 'none';
   peopleGalleryGrid.style.display = 'grid';
   galleryTabBtn.style.background = 'var(--bg-hover)';
+  galleryTabBtn.style.borderColor = 'var(--accent-color)';
   peopleTabBtn.style.background = 'transparent';
+  peopleTabBtn.style.borderColor = 'var(--border-color)';
   document.getElementById('current-view-title').textContent = 'All Photos';
+  document.getElementById('photo-count').style.display = 'block';
+  const topbarActions = document.querySelector('.topbar-actions');
+  if (topbarActions) topbarActions.style.display = 'flex';
 };
 
 peopleTabBtn.onclick = () => {
@@ -31,8 +36,15 @@ peopleTabBtn.onclick = () => {
   peopleEditToolbar.style.display = 'none';
   peopleView.style.display = 'block';
   peopleTabBtn.style.background = 'var(--bg-hover)';
+  peopleTabBtn.style.borderColor = 'var(--accent-color)';
   galleryTabBtn.style.background = 'transparent';
+  galleryTabBtn.style.borderColor = 'var(--border-color)';
   document.getElementById('current-view-title').textContent = 'People';
+  document.getElementById('photo-count').style.display = 'none';
+  const topbarActions = document.querySelector('.topbar-actions');
+  if (topbarActions) topbarActions.style.display = 'none';
+  // Remove active state from category buttons
+  document.querySelectorAll('.category-btn, .subcategory-btn').forEach(btn => btn.classList.remove('active'));
   initPeopleView();
 };
 
