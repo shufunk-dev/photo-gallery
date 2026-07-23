@@ -271,30 +271,13 @@ function renderPeopleGrid() {
 
     const repFace = cluster.faces[0];
     
-    const canvas = document.createElement('canvas');
-    canvas.width = 200;
-    canvas.height = 200;
-    canvas.style.width = '100%';
-    canvas.style.height = '100%';
-    canvas.style.objectFit = 'cover';
-    canvas.style.transition = 'transform 0.5s ease';
-    
-    const ctx = canvas.getContext('2d');
-    const imgObj = new Image();
-    imgObj.src = repFace.imgPath;
-    imgObj.onload = () => {
-      // Add some padding around the face box
-      const pad = repFace.box._width * 0.4;
-      const sx = Math.max(0, repFace.box._x - pad);
-      const sy = Math.max(0, repFace.box._y - pad);
-      const sw = Math.min(imgObj.width - sx, repFace.box._width + pad * 2);
-      const sh = Math.min(imgObj.height - sy, repFace.box._height + pad * 2);
-      
-      // Calculate a square crop area based on the face box
-      const size = Math.max(sw, sh);
-      
-      ctx.drawImage(imgObj, sx, sy, size, size, 0, 0, 200, 200);
-    };
+    const img = document.createElement('img');
+    img.src = repFace.imgPath;
+    img.alt = repFace.filename;
+    img.style.width = '100%';
+    img.style.height = '200px';
+    img.style.objectFit = 'cover';
+    img.style.transition = 'transform 0.5s ease';
 
     const overlay = document.createElement('div');
     overlay.className = 'photo-overlay';
@@ -309,7 +292,7 @@ function renderPeopleGrid() {
     `;
 
     overlay.appendChild(info);
-    card.appendChild(canvas);
+    card.appendChild(img);
     card.appendChild(overlay);
 
     card.onclick = () => {
