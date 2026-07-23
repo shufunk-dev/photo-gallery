@@ -560,11 +560,26 @@ async function init() {
 
     renderNavigation();
     
-    const activeBtn = document.querySelector('.category-btn.active, .subcategory-btn.active');
-    if (activeBtn && activeBtn.textContent !== 'All Photos') {
-       activeBtn.click();
+    const previousPath = currentDirPath;
+    
+    if (previousPath && previousPath !== 'Root') {
+       // Escape double quotes just in case they are in the folder name
+       const safePath = previousPath.replace(/"/g, '\\"');
+       const activeBtn = document.querySelector(`button[data-path="${safePath}"]`);
+       if (activeBtn) {
+         // Expand parent folders so it's visible in the UI
+         let parent = activeBtn.closest('.subcategories');
+         while (parent) {
+           const navItem = parent.closest('.nav-item');
+           if (navItem) navItem.classList.add('expanded');
+           parent = navItem ? navItem.closest('.subcategories') : null;
+         }
+         activeBtn.click();
+       } else {
+         document.querySelector('.category-btn').click(); // Fallback to All Photos
+       }
     } else {
-       renderGallery(allPhotos, 'All Photos', 'All Photos', 'Root');
+       document.querySelector('.category-btn').click(); // Fallback to All Photos
     }
   } catch (err) {
     console.error('Failed to load photos', err);
@@ -671,6 +686,7 @@ function renderTree(node, parentEl, currentPath, depth = 0) {
     const btn = document.createElement('button');
     btn.className = depth === 0 ? 'category-btn' : 'subcategory-btn';
     btn.textContent = key;
+    btn.dataset.path = dirPath;
     
     const delBtn = document.createElement('button');
     delBtn.className = 'delete-cat-btn';
