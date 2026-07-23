@@ -305,6 +305,29 @@ async function moveCategory(sourcePath, targetPath) {
   }
 }
 
+async function movePhotosDragAndDrop(photos, newDirPath) {
+  try {
+    const res = await fetch('/api/photos/move-batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ photos, newDirPath })
+    });
+    
+    if (res.ok) {
+      if (isEditMode) {
+        isEditMode = false;
+        updateEditUI();
+      }
+      init(); 
+    } else {
+      const data = await res.json();
+      alert('Error: ' + data.error);
+    }
+  } catch (err) {
+    alert('Failed to move photos');
+  }
+}
+
 // --- Initialization & Render ---
 async function init() {
   try {
@@ -341,6 +364,18 @@ function renderNavigation() {
   rootDropZone.addEventListener('drop', e => {
     e.preventDefault();
     rootDropZone.classList.remove('drag-over');
+
+    const jsonData = e.dataTransfer.getData('application/json');
+    if (jsonData) {
+      try {
+        const data = JSON.parse(jsonData);
+        if (data.type === 'photos') {
+          movePhotosDragAndDrop(data.items, 'Root');
+          return;
+        }
+      } catch(err) {}
+    }
+
     const sourcePath = e.dataTransfer.getData('text/plain');
     if (sourcePath && sourcePath.includes('/')) {
       moveCategory(sourcePath, '');
@@ -383,6 +418,18 @@ function renderTree(node, parentEl, currentPath, depth = 0) {
       e.preventDefault();
       e.stopPropagation();
       navItem.classList.remove('drag-over');
+
+      const jsonData = e.dataTransfer.getData('application/json');
+      if (jsonData) {
+        try {
+          const data = JSON.parse(jsonData);
+          if (data.type === 'photos') {
+            movePhotosDragAndDrop(data.items, dirPath);
+            return;
+          }
+        } catch(err) {}
+      }
+
       const sourcePath = e.dataTransfer.getData('text/plain');
       if (!sourcePath) return;
       if (sourcePath === dirPath || dirPath.startsWith(sourcePath + '/')) return; // Prevent dropping into self
@@ -473,6 +520,27 @@ function renderGallery(photos, title, shortTitle) {
     
     card.style.animation = `popIn 0.4s ease forwards ${index * 0.05}s`;
     card.style.opacity = '0';
+
+    card.draggable = true;
+    card.addEventListener('dragstart', (e) => {
+      let photosToMove = [];
+      if (isEditMode && selectedPhotos.has(photo)) {
+        photosToMove = Array.from(selectedPhotos);
+      } else {
+        photosToMove = [photo];
+      }
+      
+      const payload = {
+        type: 'photos',
+        items: photosToMove.map(p => ({ filename: p.name, oldDirPath: p.dirPath }))
+      };
+      
+      e.dataTransfer.setData('application/json', JSON.stringify(payload));
+      card.style.opacity = '0.5';
+    });
+    card.addEventListener('dragend', () => {
+      card.style.opacity = '1';
+    });
 
     card.onclick = () => {
       if (isEditMode) {
