@@ -5,40 +5,47 @@ Welcome to your Photo Gallery application! This guide will help you understand h
 ## Getting Started
 
 When you start the gallery, it automatically reads the `photos/` folder on your hard drive. It looks at the folder structure to figure out where everything belongs:
-* **Top-Level Folders** become your main Categories (e.g., `Nature`, `Pets`).
-* **Folders inside Categories** become your Subcategories (e.g., `Nature/Mountains`).
-
-Any images placed directly inside a Category without a sub-folder are listed under the "General" subcategory.
+* **Unlimited Nested Folders**: You can create folders inside of folders infinitely (e.g., `Vacations/2026/Hawaii/Beach`). The sidebar will automatically indent to show you your exact folder tree!
 
 ## Viewing Photos
 
-1. **Sidebar Navigation**: Use the left sidebar to filter photos by Category or Subcategory. Click on any category to expand it and see the options inside.
-2. **All Photos**: Click "All Photos" at the top of the sidebar to see everything at once.
+1. **Sidebar Navigation**: Use the left sidebar to navigate your folders. Click on any folder to expand it and see the photos inside.
+2. **All Photos**: Click "All Photos" at the top of the sidebar to see everything in your library at once.
 3. **Lightbox View**: Click any small photo thumbnail to open it in full size. You can exit this view by clicking the "X" button or clicking anywhere outside the image.
+
+## Adding Photos (Upload)
+You can easily add new photos directly through the UI:
+1. Click the **Upload Photos** button in the top right corner.
+2. Select the photos from your computer.
+3. Type or select the exact folder you want them to go to, and click Upload.
+
+## Organizing Your Gallery
+
+The gallery isn't just a viewer; it's a powerful file manager! Any changes you make here actually modify the files on your computer's hard drive.
+
+### Drag and Drop
+- **Reorganize Folders**: You can drag and drop folders in the sidebar directly into other folders!
+- **Reorganize Photos**: You can drag any photo and drop it directly onto a folder in the sidebar to move it there instantly.
+
+### Editing a Single Photo
+When you click on a photo to view it full size, you will see two buttons at the bottom:
+- **Rename**: Quickly rename the file on your hard drive.
+- **Move**: Move the file to a different folder.
+
+### Edit Mode (Batch Actions)
+If you have multiple photos to manage, click the **Edit** button in the top right corner.
+* **Selecting**: Clicking on photos will place a checkmark on them.
+* **Batch Move**: Select multiple photos, then click **Move** in the toolbar to move them all to a new folder at once.
+* **Batch Rename**: Select multiple photos and click **Rename** to open a handy table view where you can quickly type new names for all of them.
+* **Batch Delete**: Select photos you no longer want and click **Delete**. *Warning: This permanently removes the files from your hard drive!*
 
 ## People & Facial Recognition (AI Scanner)
 
 The gallery features a built-in, 100% offline Artificial Intelligence that can automatically detect and group photos of the same person.
-1. **The People Tab**: Click the "People" tab located at the top left of the sidebar to switch away from the standard Gallery view.
-2. **Starting a Scan**: Click the "Start Scan" button. The app will load your photos into your computer's Graphics Card (WebGL) and extract mathematical "face descriptors".
-3. **Naming Clusters**: Once the scan finishes, the AI will group matching faces together into clusters. You can click on any cluster, assign a name to that person, and instantly view every photo in your gallery that they appear in!
-
-## Organizing Photos
-
-The gallery isn't just a viewer; it's a powerful organization tool! Any changes you make here actually modify the files on your computer's hard drive.
-
-### Moving a Single Photo
-When you click on a photo to view it full size, you will see a **Move Photo** button. Click it to choose a new Category and Subcategory. The app will automatically create the folders for you if they don't exist yet!
-
-### Edit Mode (Batch Actions)
-If you have multiple photos to manage, click the **Edit** button in the top right corner.
-* **Selecting**: Clicking on photos will no longer open them. Instead, it places a checkmark on them.
-* **Batch Move**: Select as many photos as you like, then click **Move** in the new toolbar. They will all be moved to the new destination instantly.
-* **Batch Delete**: Select photos you no longer want and click **Delete**. *Warning: This permanently removes the files from your hard drive without sending them to the Recycle Bin!*
-
-## Creating New Categories
-
-You don't need to manually create folders on your computer. Just click the **+ New Category** button at the bottom of the sidebar. Type in your desired Category and Subcategory, and the gallery will instantly create the folder structure on your hard drive.
+1. **The People Tab**: Click the "People" tab located at the top left of the sidebar.
+2. **Rescanning**: If you've just added new photos, click the **Rescan Library** button at the top right of the People tab. The app will extract mathematical "face descriptors" from all your new photos.
+3. **Naming Clusters**: The AI will group matching faces together into clusters. You can click on any cluster, assign a name to that person, and instantly view every photo they appear in.
+4. **Smart Name Retention**: When you run a Rescan, the AI will automatically remember the mathematical structures of the people you've named and re-apply their names for you when the scan finishes!
 
 ---
 *This manual is updated automatically via the Auto-Updating GitHub script.*
