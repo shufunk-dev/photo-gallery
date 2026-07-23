@@ -13,8 +13,10 @@ const photoCount = document.getElementById('photo-count');
 
 // Edit Mode Elements
 const toggleEditBtn = document.getElementById('toggle-edit-btn');
+const toggleEditBtn = document.getElementById('toggle-edit-btn');
 const editToolbar = document.getElementById('edit-toolbar');
 const selectedCountText = document.getElementById('selected-count');
+const batchRenameBtn = document.getElementById('batch-rename-btn');
 const batchMoveBtn = document.getElementById('batch-move-btn');
 const batchDeleteBtn = document.getElementById('batch-delete-btn');
 const deleteConfirmModal = document.getElementById('delete-confirm-modal');
@@ -55,6 +57,12 @@ const submitRenamePhoto = document.getElementById('submit-rename-photo');
 const renamePhotoInput = document.getElementById('rename-photo-input');
 const renamingPhotoName = document.getElementById('renaming-photo-name');
 
+// Batch Rename Elements
+const batchRenameModal = document.getElementById('batch-rename-modal');
+const closeBatchRename = document.getElementById('close-batch-rename');
+const submitBatchRename = document.getElementById('submit-batch-rename');
+const batchRenameTbody = document.getElementById('batch-rename-tbody');
+
 // Manual Elements
 const openManualBtn = document.getElementById('open-manual-btn');
 const manualModal = document.getElementById('manual-modal');
@@ -87,9 +95,12 @@ function updateEditUI() {
 }
 
 function updateSelectionUI() {
-  selectedCountText.textContent = `${selectedPhotos.size} selected`;
-  batchMoveBtn.disabled = selectedPhotos.size === 0;
-  batchDeleteBtn.disabled = selectedPhotos.size === 0;
+  const count = selectedPhotos.size;
+  selectedCountText.textContent = `${count} selected`;
+  const hasSelection = count > 0;
+  batchRenameBtn.disabled = !hasSelection;
+  batchMoveBtn.disabled = !hasSelection;
+  batchDeleteBtn.disabled = !hasSelection;
 }
 
 toggleEditBtn.onclick = () => {
@@ -105,6 +116,7 @@ function closeAllModals() {
   manualModal.classList.remove('active');
   uploadTargetModal.classList.remove('active');
   renamePhotoModal.classList.remove('active');
+  batchRenameModal.classList.remove('active');
 }
 
 closeLightbox.onclick = closeAllModals;
@@ -115,9 +127,10 @@ cancelDeleteBtn.onclick = closeAllModals;
 closeManual.onclick = closeAllModals;
 closeUploadTarget.onclick = closeAllModals;
 closeRenamePhoto.onclick = closeAllModals;
+closeBatchRename.onclick = closeAllModals;
 
 window.onclick = (e) => {
-  if (e.target === lightboxModal || e.target === createCatModal || e.target === movePhotoModal || e.target === deleteConfirmModal || e.target === manualModal || e.target === uploadTargetModal || e.target === renamePhotoModal) {
+  if (e.target === lightboxModal || e.target === createCatModal || e.target === movePhotoModal || e.target === deleteConfirmModal || e.target === manualModal || e.target === uploadTargetModal || e.target === renamePhotoModal || e.target === batchRenameModal) {
     closeAllModals();
   }
 };
@@ -233,6 +246,93 @@ submitRenamePhoto.onclick = async () => {
     }
   } catch (err) {
     alert('Failed to rename photo');
+  }
+};
+
+// --- Batch Rename Logic ---
+batchRenameBtn.onclick = () => {
+  if (selectedPhotos.size === 0) return;
+  
+  batchRenameTbody.innerHTML = '';
+  
+  Array.from(selectedPhotos).forEach((photo, idx) => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid var(--border-color)';
+    
+    // Thumbnail cell
+    const tdImg = document.createElement('td');
+    tdImg.style.padding = '0.5rem';
+    const img = document.createElement('img');
+    img.src = photo.url;
+    img.style.width = '60px';
+    img.style.height = '60px';
+    img.style.objectFit = 'cover';
+    img.style.borderRadius = '4px';
+    tdImg.appendChild(img);
+    
+    // Input cell
+    const tdInput = document.createElement('td');
+    tdInput.style.padding = '0.5rem';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'modern-input batch-rename-input';
+    input.style.width = '100%';
+    input.value = photo.name;
+    input.dataset.oldName = photo.name;
+    input.dataset.dirPath = photo.dirPath;
+    tdInput.appendChild(input);
+    
+    tr.appendChild(tdImg);
+    tr.appendChild(tdInput);
+    batchRenameTbody.appendChild(tr);
+  });
+  
+  batchRenameModal.classList.add('active');
+};
+
+submitBatchRename.onclick = async () => {
+  const inputs = document.querySelectorAll('.batch-rename-input');
+  const photosToRename = [];
+  
+  inputs.forEach(input => {
+    const oldName = input.dataset.oldName;
+    const dirPath = input.dataset.dirPath;
+    const newName = input.value.trim();
+    
+    if (newName && newName !== oldName) {
+      photosToRename.push({ dirPath, oldName, newName });
+    }
+  });
+  
+  if (photosToRename.length === 0) {
+    closeAllModals();
+    return;
+  }
+  
+  submitBatchRename.textContent = 'Saving...';
+  submitBatchRename.disabled = true;
+  
+  try {
+    const res = await fetch('/api/photos/rename-batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ photos: photosToRename })
+    });
+    
+    if (res.ok) {
+      closeAllModals();
+      isEditMode = false;
+      updateEditUI();
+      init();
+    } else {
+      const data = await res.json();
+      alert('Error: ' + data.error);
+    }
+  } catch (err) {
+    alert('Failed to batch rename photos');
+  } finally {
+    submitBatchRename.textContent = 'Save All';
+    submitBatchRename.disabled = false;
   }
 };
 

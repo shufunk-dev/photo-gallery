@@ -236,6 +236,32 @@ app.post('/api/photos/rename', (req, res) => {
   }
 });
 
+// Batch Rename Photos Endpoint
+app.post('/api/photos/rename-batch', (req, res) => {
+  const { photos } = req.body;
+  if (!photos || !Array.isArray(photos)) {
+    return res.status(400).json({ error: 'Missing parameters' });
+  }
+
+  try {
+    const results = [];
+    for (const p of photos) {
+      const activeDirPath = p.dirPath === 'Root' ? '' : p.dirPath;
+      const oldPath = path.join(PHOTOS_DIR, activeDirPath, p.oldName);
+      const newPath = path.join(PHOTOS_DIR, activeDirPath, p.newName);
+
+      if (fs.existsSync(oldPath) && !fs.existsSync(newPath)) {
+        fs.renameSync(oldPath, newPath);
+        results.push({ oldName: p.oldName, newName: p.newName, status: 'renamed' });
+      }
+    }
+    res.json({ success: true, results });
+  } catch (err) {
+    console.error('Batch Rename Error:', err);
+    res.status(500).json({ error: 'Failed to rename photos' });
+  }
+});
+
 // Upload Photos Endpoint
 app.post('/api/photos/upload', upload.array('photos'), (req, res) => {
   try {
