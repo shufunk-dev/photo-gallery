@@ -36,6 +36,12 @@ peopleTabBtn.onclick = () => {
   initPeopleView();
 };
 
+if (window.location.search.includes('tab=people')) {
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => peopleTabBtn.click(), 500);
+  });
+}
+
 async function loadFaceDatabase() {
   try {
     const res = await fetch('/api/faces');
