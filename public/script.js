@@ -129,7 +129,9 @@ closeRenamePhoto.onclick = closeAllModals;
 closeBatchRename.onclick = closeAllModals;
 
 window.onclick = (e) => {
-  if (e.target === lightboxModal || e.target === createCatModal || e.target === movePhotoModal || e.target === deleteConfirmModal || e.target === manualModal || e.target === uploadTargetModal || e.target === renamePhotoModal || e.target === batchRenameModal) {
+  // Only auto-close the Lightbox and Manual modals when clicking outside. 
+  // Form modals require explicitly clicking the 'X' or 'Cancel' button to prevent accidental data loss.
+  if (e.target === lightboxModal || e.target === manualModal) {
     closeAllModals();
   }
 };
