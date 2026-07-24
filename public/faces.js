@@ -183,14 +183,34 @@ async function runFaceScan(isRescan = false) {
     await new Promise((resolve) => {
       img.onload = async () => {
         try {
-          const detections = await faceapi.detectAllFaces(img).withFaceLandmarks().withFaceDescriptors();
+          let scale = 1;
+          let input = img;
+          const MAX_SIZE = 1200;
+          if (img.width > MAX_SIZE || img.height > MAX_SIZE) {
+            scale = MAX_SIZE / Math.max(img.width, img.height);
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            input = canvas;
+          }
+          
+          const detections = await faceapi.detectAllFaces(input).withFaceLandmarks().withFaceDescriptors();
           for (let det of detections) {
+            const box = det.detection.box;
+            const originalBox = {
+              _x: box.x / scale,
+              _y: box.y / scale,
+              _width: box.width / scale,
+              _height: box.height / scale
+            };
             allDetectedFaces.push({
               descriptor: Array.from(det.descriptor),
               filename: photo.name,
               dirPath: photo.dirPath,
               imgPath: imgPath,
-              box: det.detection.box
+              box: originalBox
             });
           }
         } catch (e) {
@@ -274,8 +294,8 @@ function clusterFaces(faces) {
     }
   }
 
-  // Filter out tiny clusters (e.g., less than 2 photos) to reduce noise
-  faceDb.clusters = clusters.filter(c => c.faces.length > 1);
+  // Filter out tiny clusters (e.g., less than 1 photo) to reduce noise
+  faceDb.clusters = clusters.filter(c => c.faces.length > 0);
 }
 
 function renderPeopleGrid() {
