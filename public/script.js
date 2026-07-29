@@ -748,10 +748,11 @@ function renderTree(node, parentEl, currentPath, depth = 0) {
     
     const btnContainer = document.createElement('div');
     btnContainer.style.display = 'flex';
-    btnContainer.style.gap = '12px';
+    btnContainer.style.gap = '24px'; // Huge gap
 
     const renameBtn = document.createElement('button');
     renameBtn.className = 'delete-cat-btn';
+    renameBtn.style.marginRight = '8px';
     renameBtn.innerHTML = '✏️';
     renameBtn.title = 'Rename Folder';
     renameBtn.onclick = (e) => {
