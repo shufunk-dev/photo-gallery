@@ -213,14 +213,23 @@ submitUploadBtn.onclick = async () => {
 renamePhotoBtn.onclick = () => {
   if (!currentPhotoObj) return;
   renamingPhotoName.textContent = `Renaming: ${currentPhotoObj.name}`;
-  renamePhotoInput.value = currentPhotoObj.name;
+  const lastDotIdx = currentPhotoObj.name.lastIndexOf('.');
+  const baseName = lastDotIdx !== -1 ? currentPhotoObj.name.substring(0, lastDotIdx) : currentPhotoObj.name;
+  renamePhotoInput.value = baseName;
   renamePhotoModal.classList.add('active');
 };
 
 submitRenamePhoto.onclick = async () => {
   if (!currentPhotoObj) return;
-  const newName = renamePhotoInput.value.trim();
+  let newName = renamePhotoInput.value.trim();
   if (!newName) return;
+  
+  const lastDotIdx = currentPhotoObj.name.lastIndexOf('.');
+  const ext = lastDotIdx !== -1 ? currentPhotoObj.name.substring(lastDotIdx) : '';
+  if (!newName.toLowerCase().endsWith(ext.toLowerCase())) {
+    newName += ext;
+  }
+  
   if (newName === currentPhotoObj.name) {
     closeAllModals();
     return;
@@ -279,7 +288,9 @@ batchRenameBtn.onclick = () => {
     input.type = 'text';
     input.className = 'modern-input batch-rename-input';
     input.style.width = '100%';
-    input.value = photo.name;
+    const lastDotIdx = photo.name.lastIndexOf('.');
+    const baseName = lastDotIdx !== -1 ? photo.name.substring(0, lastDotIdx) : photo.name;
+    input.value = baseName;
     input.dataset.oldName = photo.name;
     input.dataset.dirPath = photo.dirPath;
     tdInput.appendChild(input);
@@ -299,10 +310,17 @@ submitBatchRename.onclick = async () => {
   inputs.forEach(input => {
     const oldName = input.dataset.oldName;
     const dirPath = input.dataset.dirPath;
-    const newName = input.value.trim();
+    let newName = input.value.trim();
     
-    if (newName && newName !== oldName) {
-      photosToRename.push({ dirPath, oldName, newName });
+    if (newName) {
+      const lastDotIdx = oldName.lastIndexOf('.');
+      const ext = lastDotIdx !== -1 ? oldName.substring(lastDotIdx) : '';
+      if (!newName.toLowerCase().endsWith(ext.toLowerCase())) {
+        newName += ext;
+      }
+      if (newName !== oldName) {
+        photosToRename.push({ dirPath, oldName, newName });
+      }
     }
   });
   
