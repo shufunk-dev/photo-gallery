@@ -748,7 +748,7 @@ function renderTree(node, parentEl, currentPath, depth = 0) {
     
     const btnContainer = document.createElement('div');
     btnContainer.style.display = 'flex';
-    btnContainer.style.gap = '5px';
+    btnContainer.style.gap = '12px';
 
     const renameBtn = document.createElement('button');
     renameBtn.className = 'delete-cat-btn';
