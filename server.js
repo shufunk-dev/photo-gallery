@@ -111,6 +111,67 @@ app.post('/api/categories/delete', (req, res) => {
   }
 });
 
+app.post('/api/categories/rename', (req, res) => {
+  const { dirPath, newName } = req.body;
+  if (!dirPath || !newName) return res.status(400).json({ error: 'Path and new name are required' });
+
+  try {
+    const absSourcePath = path.join(PHOTOS_DIR, dirPath);
+    if (!fs.existsSync(absSourcePath)) {
+      return res.status(404).json({ error: 'Folder not found' });
+    }
+
+    const parentDir = path.dirname(absSourcePath);
+    const absTargetPath = path.join(parentDir, newName);
+
+    if (fs.existsSync(absTargetPath)) {
+      return res.status(400).json({ error: 'A folder with that name already exists' });
+    }
+
+    fs.renameSync(absSourcePath, absTargetPath);
+
+    // Update faces.json to prevent breaking AI face tracking
+    const FACES_DB_PATH = path.join(__dirname, 'faces.json');
+    if (fs.existsSync(FACES_DB_PATH)) {
+      try {
+        const data = JSON.parse(fs.readFileSync(FACES_DB_PATH, 'utf-8'));
+        let changed = false;
+        
+        // Calculate relative new path
+        const relativeTargetDirPath = path.relative(PHOTOS_DIR, absTargetPath).replace(/\\/g, '/');
+        const oldPrefix = dirPath.replace(/\\/g, '/');
+        const newPrefix = relativeTargetDirPath;
+        const oldImgPrefix = `/photos/${oldPrefix}`;
+        const newImgPrefix = `/photos/${newPrefix}`;
+
+        for (let cluster of (data.clusters || [])) {
+          for (let face of cluster.faces) {
+            let faceDir = face.dirPath.replace(/\\/g, '/');
+            if (faceDir === oldPrefix || faceDir.startsWith(oldPrefix + '/')) {
+              face.dirPath = faceDir.replace(oldPrefix, newPrefix);
+              changed = true;
+            }
+            if (face.imgPath.startsWith(oldImgPrefix + '/')) {
+              face.imgPath = face.imgPath.replace(oldImgPrefix, newImgPrefix);
+              changed = true;
+            }
+          }
+        }
+        if (changed) {
+          fs.writeFileSync(FACES_DB_PATH, JSON.stringify(data, null, 2), 'utf-8');
+        }
+      } catch (e) {
+        console.error("Failed to update faces db during category rename", e);
+      }
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Category Rename Error:', err);
+    res.status(500).json({ error: 'Failed to rename folder' });
+  }
+});
+
 app.post('/api/categories/move', (req, res) => {
   const { sourcePath, targetPath } = req.body;
   if (!sourcePath || targetPath === undefined) {

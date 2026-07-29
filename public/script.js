@@ -39,6 +39,13 @@ const submitCreateCat = document.getElementById('submit-create-cat');
 const newCatName = document.getElementById('new-cat-name');
 const newSubcatName = document.getElementById('new-subcat-name');
 
+const renameCatModal = document.getElementById('rename-category-modal');
+const closeRenameCat = document.getElementById('close-rename-category');
+const submitRenameCat = document.getElementById('submit-rename-cat');
+const renameCatInput = document.getElementById('rename-cat-input');
+const renamingCategoryName = document.getElementById('renaming-category-name');
+let currentRenameCategoryPath = '';
+
 // Move Photo Modal Elements
 const movePhotoModal = document.getElementById('move-photo-modal');
 const closeMovePhoto = document.getElementById('close-move-photo');
@@ -116,11 +123,13 @@ function closeAllModals() {
   uploadTargetModal.classList.remove('active');
   renamePhotoModal.classList.remove('active');
   batchRenameModal.classList.remove('active');
+  renameCatModal.classList.remove('active');
   deleteConfirmModal.classList.remove('active');
 }
 
 closeLightbox.onclick = closeAllModals;
 closeCreateCat.onclick = closeAllModals;
+closeRenameCat.onclick = closeAllModals;
 closeMovePhoto.onclick = closeAllModals;
 closeDeleteConfirm.onclick = closeAllModals;
 cancelDeleteBtn.onclick = closeAllModals;
@@ -505,6 +514,36 @@ submitDeleteBtn.onclick = async () => {
   }
 };
 
+submitRenameCat.onclick = async () => {
+  const newName = renameCatInput.value.trim();
+  if (!newName) return;
+  if (!currentRenameCategoryPath) return;
+
+  submitRenameCat.textContent = 'Saving...';
+  submitRenameCat.disabled = true;
+
+  try {
+    const res = await fetch('/api/categories/rename', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dirPath: currentRenameCategoryPath, newName })
+    });
+    
+    if (res.ok) {
+      closeAllModals();
+      init();
+    } else {
+      const data = await res.json();
+      alert('Error: ' + data.error);
+    }
+  } catch(err) {
+    alert('Failed to rename folder');
+  } finally {
+    submitRenameCat.textContent = 'Rename Folder';
+    submitRenameCat.disabled = false;
+  }
+};
+
 // --- Recursive Category Actions ---
 async function deleteCategory(dirPath) {
   if (!confirm(`Are you sure you want to permanently delete "${dirPath}" and ALL photos inside it?`)) return;
@@ -707,17 +746,37 @@ function renderTree(node, parentEl, currentPath, depth = 0) {
     btn.textContent = key;
     btn.dataset.path = dirPath;
     
+    const btnContainer = document.createElement('div');
+    btnContainer.style.display = 'flex';
+    btnContainer.style.gap = '5px';
+
+    const renameBtn = document.createElement('button');
+    renameBtn.className = 'delete-cat-btn';
+    renameBtn.innerHTML = '✏️';
+    renameBtn.title = 'Rename Folder';
+    renameBtn.onclick = (e) => {
+      e.stopPropagation();
+      currentRenameCategoryPath = dirPath;
+      const folderName = dirPath.split('/').pop();
+      renamingCategoryName.textContent = `Renaming: ${dirPath}`;
+      renameCatInput.value = folderName;
+      renameCatModal.classList.add('active');
+    };
+
     const delBtn = document.createElement('button');
     delBtn.className = 'delete-cat-btn';
-    delBtn.innerHTML = '🗑️';
+    delBtn.innerHTML = '×';
     delBtn.title = 'Delete Folder';
     delBtn.onclick = (e) => {
       e.stopPropagation();
       deleteCategory(dirPath);
     };
 
+    btnContainer.appendChild(renameBtn);
+    btnContainer.appendChild(delBtn);
+
     catRow.appendChild(btn);
-    catRow.appendChild(delBtn);
+    catRow.appendChild(btnContainer);
     
     const childrenContainer = document.createElement('div');
     childrenContainer.className = 'subcategories';
