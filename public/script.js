@@ -15,7 +15,6 @@ const photoCount = document.getElementById('photo-count');
 const toggleEditBtn = document.getElementById('toggle-edit-btn');
 const editToolbar = document.getElementById('edit-toolbar');
 const selectedCountText = document.getElementById('selected-count');
-const autoIdentifyBtn = document.getElementById('auto-identify-btn');
 const batchRenameBtn = document.getElementById('batch-rename-btn');
 const batchMoveBtn = document.getElementById('batch-move-btn');
 const batchDeleteBtn = document.getElementById('batch-delete-btn');
@@ -83,13 +82,6 @@ const batchRenameTbody = document.getElementById('batch-rename-tbody');
 const openManualBtn = document.getElementById('open-manual-btn');
 const manualModal = document.getElementById('manual-modal');
 const closeManual = document.getElementById('close-manual');
-
-// Settings Elements
-const openSettingsBtn = document.getElementById('open-settings-btn');
-const settingsModal = document.getElementById('settings-modal');
-const closeSettings = document.getElementById('close-settings');
-const geminiApiKeyInput = document.getElementById('gemini-api-key-input');
-const saveSettingsBtn = document.getElementById('save-settings-btn');
 const manualContent = document.getElementById('manual-content');
 
 // Upload Elements
@@ -121,7 +113,6 @@ function updateSelectionUI() {
   const count = selectedPhotos.size;
   selectedCountText.textContent = `${count} selected`;
   const hasSelection = count > 0;
-  autoIdentifyBtn.disabled = !hasSelection;
   batchRenameBtn.disabled = !hasSelection;
   batchMoveBtn.disabled = !hasSelection;
   batchDeleteBtn.disabled = !hasSelection;
@@ -142,7 +133,6 @@ function closeAllModals() {
   renamePhotoModal.classList.remove('active');
   batchRenameModal.classList.remove('active');
   renameCatModal.classList.remove('active');
-  settingsModal.classList.remove('active');
   deleteConfirmModal.classList.remove('active');
   cropPhotoModal.classList.remove('active');
 }
@@ -157,7 +147,6 @@ closeManual.onclick = closeAllModals;
 closeUploadTarget.onclick = closeAllModals;
 closeRenamePhoto.onclick = closeAllModals;
 closeBatchRename.onclick = closeAllModals;
-closeSettings.onclick = closeAllModals;
 closeCropPhoto.onclick = closeAllModals;
 
 window.onclick = (e) => {
@@ -448,139 +437,6 @@ submitBatchRename.onclick = async () => {
     submitBatchRename.textContent = 'Save All';
     submitBatchRename.disabled = false;
   }
-};
-
-// --- Auto-Identify Logic ---
-function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
-
-autoIdentifyBtn.onclick = async () => {
-  const apiKey = localStorage.getItem('geminiApiKey');
-  if (!apiKey) {
-    alert("Please enter your Gemini API Key in the Settings first.");
-    openSettingsBtn.click();
-    return;
-  }
-  if (selectedPhotos.size === 0) return;
-
-  autoIdentifyBtn.textContent = 'Identifying...';
-  autoIdentifyBtn.disabled = true;
-
-  try {
-    const photosToRename = [];
-    const usedNames = new Set();
-    
-    // Add current selection original names
-    for (let photo of selectedPhotos) {
-      usedNames.add(photo.name.toLowerCase());
-    }
-    
-    // Add existing names in the library to avoid conflicts
-    const resDir = await fetch('/api/photos');
-    const db = await resDir.json();
-    for (let p of db.photos) {
-      usedNames.add(p.name.toLowerCase());
-    }
-
-    for (let photo of selectedPhotos) {
-      try {
-        const imgRes = await fetch(photo.url);
-        const blob = await imgRes.blob();
-        const base64Data = await blobToBase64(blob);
-
-        const promptText = "Identify the specific Transformer character or toy in this image. Respond with ONLY the character's name. If you do not know the specific character, respond with a short 2-3 word description of the object. Do not include any other text, punctuation, or explanations.";
-
-        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [
-                { text: promptText },
-                { inline_data: { mime_type: blob.type, data: base64Data } }
-              ]
-            }]
-          })
-        });
-
-        if (!geminiRes.ok) {
-          console.error("Gemini API error", await geminiRes.text());
-          continue;
-        }
-
-        const data = await geminiRes.json();
-        let name = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
-        
-        if (name) {
-          // clean up name
-          name = name.replace(/[<>:"/\\|?*]/g, '').replace(/\n/g, '').trim();
-          
-          const oldExt = photo.name.includes('.') ? photo.name.substring(photo.name.lastIndexOf('.')) : '';
-          let finalName = name + oldExt;
-          let counter = 1;
-          
-          while (usedNames.has(finalName.toLowerCase()) && finalName.toLowerCase() !== photo.name.toLowerCase()) {
-            finalName = `${name} (${counter})${oldExt}`;
-            counter++;
-          }
-          
-          usedNames.add(finalName.toLowerCase());
-          
-          if (finalName !== photo.name) {
-            photosToRename.push({
-              dirPath: photo.dirPath,
-              oldName: photo.name,
-              newName: finalName
-            });
-          }
-        }
-      } catch (err) {
-        console.error("Failed to identify", photo.name, err);
-      }
-    }
-
-    if (photosToRename.length > 0) {
-      const renameRes = await fetch('/api/photos/rename-batch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ photos: photosToRename })
-      });
-      if (renameRes.ok) {
-        isEditMode = false;
-        selectedPhotos.clear();
-        closeAllModals();
-        init();
-      } else {
-        const errData = await renameRes.json();
-        alert("Failed to batch rename after identification: " + (errData.error || ""));
-      }
-    } else {
-      alert("No photos could be automatically renamed. They might have failed to identify or already have the correct name.");
-    }
-  } catch (err) {
-    alert("An error occurred during auto-identify.");
-    console.error(err);
-  } finally {
-    autoIdentifyBtn.textContent = '✨ Auto-Identify';
-    autoIdentifyBtn.disabled = selectedPhotos.size === 0;
-  }
-};
-
-// --- Settings Logic ---
-openSettingsBtn.onclick = () => {
-  geminiApiKeyInput.value = localStorage.getItem('geminiApiKey') || '';
-  settingsModal.classList.add('active');
-};
-
-saveSettingsBtn.onclick = () => {
-  localStorage.setItem('geminiApiKey', geminiApiKeyInput.value.trim());
-  closeAllModals();
 };
 
 // --- Move Category Logic ---
