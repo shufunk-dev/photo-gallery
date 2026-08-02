@@ -81,7 +81,6 @@ const settingsModal = document.getElementById('settings-modal');
 const closeSettings = document.getElementById('close-settings');
 const geminiApiKeyInput = document.getElementById('gemini-api-key-input');
 const saveSettingsBtn = document.getElementById('save-settings-btn');
-const closeManual = document.getElementById('close-manual');
 const manualContent = document.getElementById('manual-content');
 
 // Upload Elements
