@@ -31,6 +31,15 @@ const lightboxCaption = document.getElementById('lightbox-caption');
 const closeLightbox = document.getElementById('close-lightbox');
 const movePhotoBtn = document.getElementById('move-photo-btn');
 const renamePhotoBtn = document.getElementById('rename-photo-btn');
+const cropPhotoBtn = document.getElementById('crop-photo-btn');
+
+// Crop Elements
+const cropPhotoModal = document.getElementById('crop-photo-modal');
+const closeCropPhoto = document.getElementById('close-crop-photo');
+const cropperImg = document.getElementById('cropper-img');
+const saveCropBtn = document.getElementById('save-crop-btn');
+let cropperInstance = null;
+let photoToCrop = null;
 
 // Create Category Modal Elements
 const newCategoryBtn = document.getElementById('new-category-btn');
@@ -135,6 +144,7 @@ function closeAllModals() {
   renameCatModal.classList.remove('active');
   settingsModal.classList.remove('active');
   deleteConfirmModal.classList.remove('active');
+  cropPhotoModal.classList.remove('active');
 }
 
 closeLightbox.onclick = closeAllModals;
@@ -148,6 +158,7 @@ closeUploadTarget.onclick = closeAllModals;
 closeRenamePhoto.onclick = closeAllModals;
 closeBatchRename.onclick = closeAllModals;
 closeSettings.onclick = closeAllModals;
+closeCropPhoto.onclick = closeAllModals;
 
 window.onclick = (e) => {
   // Only auto-close the Lightbox and Manual modals when clicking outside. 
@@ -227,6 +238,69 @@ submitUploadBtn.onclick = async () => {
   } finally {
     submitUploadBtn.textContent = 'Upload';
     submitUploadBtn.disabled = false;
+  }
+};
+
+// --- Crop Logic ---
+cropPhotoBtn.onclick = () => {
+  if (!currentLightboxPhoto) return;
+  photoToCrop = currentLightboxPhoto;
+  
+  closeAllModals();
+  cropPhotoModal.classList.add('active');
+  
+  cropperImg.src = photoToCrop.url;
+  
+  cropperImg.onload = () => {
+    if (cropperInstance) cropperInstance.destroy();
+    cropperInstance = new Cropper(cropperImg, {
+      viewMode: 2,
+      background: false,
+      autoCropArea: 0.8,
+    });
+  };
+};
+
+saveCropBtn.onclick = async () => {
+  if (!cropperInstance || !photoToCrop) return;
+  
+  saveCropBtn.textContent = 'Saving...';
+  saveCropBtn.disabled = true;
+
+  try {
+    const canvas = cropperInstance.getCroppedCanvas({
+      imageSmoothingEnabled: true,
+      imageSmoothingQuality: 'high',
+    });
+    
+    const base64Data = canvas.toDataURL('image/jpeg', 0.95);
+    
+    const res = await fetch('/api/photos/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        dirPath: photoToCrop.dirPath,
+        name: photoToCrop.name,
+        base64Data: base64Data
+      })
+    });
+
+    if (res.ok) {
+      if (cropperInstance) {
+        cropperInstance.destroy();
+        cropperInstance = null;
+      }
+      closeAllModals();
+      init();
+    } else {
+      alert("Failed to save cropped image");
+    }
+  } catch (err) {
+    alert("An error occurred while saving the crop");
+    console.error(err);
+  } finally {
+    saveCropBtn.textContent = 'Save Crop (Overwrites Original)';
+    saveCropBtn.disabled = false;
   }
 };
 

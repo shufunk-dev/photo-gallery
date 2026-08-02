@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" rel="stylesheet">
 </head>
 <body>
   <div class="app-container">
@@ -82,6 +83,19 @@
     <div style="display: flex; gap: 10px; margin-top: 1.5rem; justify-content: center;">
       <button id="rename-photo-btn" class="action-btn" style="background-color: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); z-index: 1001;">Rename Photo</button>
       <button id="move-photo-btn" class="action-btn" style="background-color: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); z-index: 1001;">Move Photo</button>
+      <button id="crop-photo-btn" class="action-btn" style="background-color: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); z-index: 1001;">Crop Photo</button>
+    </div>
+  </div>
+
+  <!-- Crop Photo Modal -->
+  <div id="crop-photo-modal" class="custom-modal">
+    <div class="modal-content" style="max-width: 90vw; width: 800px; max-height: 90vh;">
+      <span class="close-btn" id="close-crop-photo">&times;</span>
+      <h3>Crop Photo</h3>
+      <div style="width: 100%; height: 60vh; background: #000; margin-top: 1rem; position: relative;">
+        <img id="cropper-img" style="display: block; max-width: 100%;">
+      </div>
+      <button id="save-crop-btn" class="action-btn primary" style="margin-top: 1rem; width: 100%;">Save Crop (Overwrites Original)</button>
     </div>
   </div>
 
@@ -207,8 +221,9 @@
   </div>
 
   <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
   <script defer src="face-api.min.js"></script>
   <script src="faces.js"></script>
-  <script src="script.js?v=3"></script>
+  <script src="script.js?v=4"></script>
 </body>
 </html>

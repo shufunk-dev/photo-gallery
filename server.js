@@ -297,6 +297,58 @@ app.post('/api/photos/rename', (req, res) => {
   }
 });
 
+app.post('/api/photos/update', (req, res) => {
+  const { dirPath, name, base64Data } = req.body;
+  if (!name || !base64Data) {
+    return res.status(400).json({ error: 'Missing parameters' });
+  }
+
+  try {
+    const activeDirPath = dirPath === 'Root' ? '' : dirPath;
+    const targetPath = path.join(PHOTOS_DIR, activeDirPath, name);
+
+    if (!fs.existsSync(targetPath)) {
+      return res.status(404).json({ error: 'Original photo not found' });
+    }
+
+    const base64Image = base64Data.split(';base64,').pop();
+    fs.writeFileSync(targetPath, base64Image, { encoding: 'base64' });
+
+    // Update faces.json to remove old tracking boxes for the modified image
+    const FACES_DB_PATH = path.join(__dirname, 'faces.json');
+    if (fs.existsSync(FACES_DB_PATH)) {
+      try {
+        const data = JSON.parse(fs.readFileSync(FACES_DB_PATH, 'utf-8'));
+        let changed = false;
+        
+        const targetImgPath = `/photos/${activeDirPath ? activeDirPath + '/' : ''}${name}`;
+
+        if (data.clusters) {
+          for (let cluster of data.clusters) {
+            const originalLength = cluster.faces.length;
+            cluster.faces = cluster.faces.filter(f => f.imgPath !== targetImgPath);
+            if (cluster.faces.length !== originalLength) {
+              changed = true;
+            }
+          }
+          data.clusters = data.clusters.filter(c => c.faces.length > 0);
+        }
+
+        if (changed) {
+          fs.writeFileSync(FACES_DB_PATH, JSON.stringify(data, null, 2), 'utf-8');
+        }
+      } catch (e) {
+        console.error("Failed to update faces db during photo update", e);
+      }
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Update Error:', err);
+    res.status(500).json({ error: 'Failed to update photo' });
+  }
+});
+
 // Batch Rename Photos Endpoint
 app.post('/api/photos/rename-batch', (req, res) => {
   const { photos } = req.body;
