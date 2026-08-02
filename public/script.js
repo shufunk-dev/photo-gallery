@@ -243,8 +243,8 @@ submitUploadBtn.onclick = async () => {
 
 // --- Crop Logic ---
 cropPhotoBtn.onclick = () => {
-  if (!currentLightboxPhoto) return;
-  photoToCrop = currentLightboxPhoto;
+  if (!currentPhotoObj) return;
+  photoToCrop = currentPhotoObj;
   
   closeAllModals();
   cropPhotoModal.classList.add('active');
