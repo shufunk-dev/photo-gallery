@@ -37,6 +37,7 @@ const cropPhotoModal = document.getElementById('crop-photo-modal');
 const closeCropPhoto = document.getElementById('close-crop-photo');
 const cropperImg = document.getElementById('cropper-img');
 const saveCropBtn = document.getElementById('save-crop-btn');
+const rotateCropBtn = document.getElementById('rotate-crop-btn');
 let cropperInstance = null;
 let photoToCrop = null;
 
@@ -248,6 +249,12 @@ cropPhotoBtn.onclick = () => {
       autoCropArea: 0.8,
     });
   };
+};
+
+rotateCropBtn.onclick = () => {
+  if (cropperInstance) {
+    cropperInstance.rotate(90);
+  }
 };
 
 saveCropBtn.onclick = async () => {
