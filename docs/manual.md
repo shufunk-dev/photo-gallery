@@ -28,15 +28,17 @@ The gallery isn't just a viewer; it's a powerful file manager! Any changes you m
 - **Reorganize Photos**: You can drag any photo and drop it directly onto a folder in the sidebar to move it there instantly.
 
 ### Editing a Single Photo
-When you click on a photo to view it full size, you will see two buttons at the bottom:
-- **Rename**: Quickly rename the file on your hard drive.
-- **Move**: Move the file to a different folder.
+When you click on a photo to view it full size, you will see buttons at the bottom:
+- **Rename Photo**: Quickly rename the file on your hard drive.
+- **Move Photo**: Move the file to a different folder.
+- **Crop Photo**: Opens a visual crop editor. You can optionally rotate the image by 90 degrees before cropping. Saving a crop will safely overwrite the original file and automatically reset any facial recognition tracking for that specific photo.
 
 ### Edit Mode (Batch Actions)
 If you have multiple photos to manage, click the **Edit** button in the top right corner.
 * **Selecting**: Clicking on photos will place a checkmark on them.
+* **Select All**: Click the **Select All** button in the edit toolbar to instantly select all photos currently visible in your grid. Clicking it again will deselect them.
 * **Batch Move**: Select multiple photos, then click **Move** in the toolbar to move them all to a new folder at once.
-* **Batch Rename**: Select multiple photos and click **Rename** to open a handy table view where you can quickly type new names for all of them.
+* **Batch Rename**: Select multiple photos and click **Rename** to open a handy table view where you can quickly type new names for all of them. The thumbnails in this view are large so you can easily read product labels or DVD spines.
 * **Batch Delete**: Select photos you no longer want and click **Delete**. *Warning: This permanently removes the files from your hard drive!*
 
 ## People & Facial Recognition (AI Scanner)
