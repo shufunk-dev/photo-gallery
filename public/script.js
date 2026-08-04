@@ -3,6 +3,7 @@ let categoriesTree = {};
 let currentPhotoObj = null;
 let isEditMode = false;
 let selectedPhotos = new Set();
+let currentViewPhotos = [];
 let currentDirPath = '';
 
 // DOM Elements
@@ -15,6 +16,7 @@ const photoCount = document.getElementById('photo-count');
 const toggleEditBtn = document.getElementById('toggle-edit-btn');
 const editToolbar = document.getElementById('edit-toolbar');
 const selectedCountText = document.getElementById('selected-count');
+const selectAllBtn = document.getElementById('select-all-btn');
 const batchRenameBtn = document.getElementById('batch-rename-btn');
 const batchMoveBtn = document.getElementById('batch-move-btn');
 const batchDeleteBtn = document.getElementById('batch-delete-btn');
@@ -117,7 +119,24 @@ function updateSelectionUI() {
   batchRenameBtn.disabled = !hasSelection;
   batchMoveBtn.disabled = !hasSelection;
   batchDeleteBtn.disabled = !hasSelection;
+  
+  if (currentViewPhotos.length > 0 && count === currentViewPhotos.length) {
+    selectAllBtn.textContent = 'Deselect All';
+  } else {
+    selectAllBtn.textContent = 'Select All';
+  }
 }
+
+selectAllBtn.onclick = () => {
+  if (selectedPhotos.size === currentViewPhotos.length) {
+    selectedPhotos.clear();
+    document.querySelectorAll('.photo-card').forEach(el => el.classList.remove('selected'));
+  } else {
+    currentViewPhotos.forEach(p => selectedPhotos.add(p));
+    document.querySelectorAll('.photo-card').forEach(el => el.classList.add('selected'));
+  }
+  updateSelectionUI();
+};
 
 toggleEditBtn.onclick = () => {
   isEditMode = !isEditMode;
@@ -898,6 +917,7 @@ function setActiveNav(button) {
 }
 
 function renderGallery(photos, title, shortTitle, dirPath = 'Root') {
+  currentViewPhotos = photos;
   currentViewTitle.textContent = shortTitle || title;
   currentDirPath = dirPath;
   photoCount.textContent = `${photos.length} photo${photos.length !== 1 ? 's' : ''}`;
