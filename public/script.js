@@ -365,8 +365,8 @@ batchRenameBtn.onclick = () => {
     tdImg.style.padding = '0.5rem';
     const img = document.createElement('img');
     img.src = photo.url;
-    img.style.width = '60px';
-    img.style.height = '60px';
+    img.style.width = '120px';
+    img.style.height = '120px';
     img.style.objectFit = 'cover';
     img.style.borderRadius = '4px';
     tdImg.appendChild(img);
