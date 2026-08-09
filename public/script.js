@@ -467,8 +467,17 @@ submitBatchRename.onclick = async () => {
 
 // --- Move Category Logic ---
 newCategoryBtn.onclick = () => {
-  createCatModal.classList.add('active');
-  newCatName.focus();
+  if (currentDirPath && currentDirPath !== 'Root') {
+    newCatName.value = currentDirPath;
+    newSubcatName.value = '';
+    createCatModal.classList.add('active');
+    newSubcatName.focus();
+  } else {
+    newCatName.value = '';
+    newSubcatName.value = '';
+    createCatModal.classList.add('active');
+    newCatName.focus();
+  }
 };
 
 submitCreateCat.onclick = async () => {
