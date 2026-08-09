@@ -749,15 +749,14 @@ async function init() {
 function renderNavigation() {
   categoryNav.innerHTML = '';
 
-  // Drop target for "Root" (moving a category back to the top level)
-  const rootDropZone = document.createElement('div');
-  rootDropZone.className = 'nav-item';
-  rootDropZone.innerHTML = '<div style="height: 10px; width: 100%;"></div>';
-  rootDropZone.addEventListener('dragover', e => { e.preventDefault(); rootDropZone.classList.add('drag-over'); });
-  rootDropZone.addEventListener('dragleave', () => rootDropZone.classList.remove('drag-over'));
-  rootDropZone.addEventListener('drop', e => {
+  const sidebarElement = document.querySelector('.sidebar');
+  sidebarElement.ondragover = (e) => {
     e.preventDefault();
-    rootDropZone.classList.remove('drag-over');
+  };
+  sidebarElement.ondragleave = () => {
+  };
+  sidebarElement.ondrop = (e) => {
+    e.preventDefault();
 
     const jsonData = e.dataTransfer.getData('application/json');
     if (jsonData) {
@@ -774,7 +773,7 @@ function renderNavigation() {
     if (sourcePath && sourcePath.includes('/')) {
       moveCategory(sourcePath, '');
     }
-  });
+  };
 
   const allBtn = document.createElement('button');
   allBtn.className = 'category-btn active';
@@ -784,7 +783,7 @@ function renderNavigation() {
     renderGallery(allPhotos, 'All Photos', 'All Photos', 'Root');
   };
   
-  categoryNav.appendChild(rootDropZone);
+
   categoryNav.appendChild(allBtn);
 
   renderTree(categoriesTree, categoryNav, '');
