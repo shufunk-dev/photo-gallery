@@ -798,19 +798,37 @@ function renderTree(node, parentEl, currentPath, depth = 0) {
     navItem.style.marginLeft = `${depth * 15}px`; // Recursive indentation
 
     // Drop Target Logic
+    let dragExpandTimeout = null;
+
     navItem.addEventListener('dragover', (e) => {
       e.preventDefault();
       e.stopPropagation();
       navItem.classList.add('drag-over');
+      
+      if (!navItem.classList.contains('expanded')) {
+        if (!dragExpandTimeout) {
+          dragExpandTimeout = setTimeout(() => {
+            navItem.classList.add('expanded');
+          }, 800);
+        }
+      }
     });
     navItem.addEventListener('dragleave', (e) => {
       e.stopPropagation();
       navItem.classList.remove('drag-over');
+      if (dragExpandTimeout) {
+        clearTimeout(dragExpandTimeout);
+        dragExpandTimeout = null;
+      }
     });
     navItem.addEventListener('drop', (e) => {
       e.preventDefault();
       e.stopPropagation();
       navItem.classList.remove('drag-over');
+      if (dragExpandTimeout) {
+        clearTimeout(dragExpandTimeout);
+        dragExpandTimeout = null;
+      }
 
       const jsonData = e.dataTransfer.getData('application/json');
       if (jsonData) {
