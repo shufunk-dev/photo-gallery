@@ -63,9 +63,7 @@ const movePhotoModal = document.getElementById('move-photo-modal');
 const closeMovePhoto = document.getElementById('close-move-photo');
 const submitMovePhoto = document.getElementById('submit-move-photo');
 const moveCatInput = document.getElementById('move-cat-input');
-const moveSubcatInput = document.getElementById('move-subcat-input');
 const catList = document.getElementById('category-list');
-const subcatList = document.getElementById('subcategory-list');
 const movingPhotoName = document.getElementById('moving-photo-name');
 
 // Rename Photo Modal Elements
@@ -520,7 +518,6 @@ function flattenPaths(tree, currentPath = '', result = []) {
 
 function openMoveModal() {
   catList.innerHTML = '';
-  subcatList.innerHTML = '';
   const allPaths = flattenPaths(categoriesTree);
   
   allPaths.forEach(p => {
@@ -555,11 +552,6 @@ batchMoveBtn.onclick = () => {
 
 submitMovePhoto.onclick = async () => {
   let newDirPath = moveCatInput.value.trim();
-  // Support legacy subcategory input field if they typed it
-  const newSubcat = moveSubcatInput.value.trim();
-  if (newSubcat) {
-    newDirPath = newDirPath ? `${newDirPath}/${newSubcat}` : newSubcat;
-  }
 
   if (!newDirPath) return alert('Target path is required');
 
