@@ -19,6 +19,12 @@ You can easily add new photos directly through the UI:
 2. Select the photos from your computer.
 3. Type or select the exact folder you want them to go to, and click Upload.
 
+## Downloading & Zipping Photos
+You can export photos as zip archives at any time:
+1. **Download All Photos**: When viewing "All Photos", click the **Download Zip** button in the top bar to zip your entire library while preserving all subfolder structures.
+2. **Download a Folder**: Navigate to any folder in the sidebar and click **Download Zip** in the top bar to download only that folder and any subfolders inside it.
+3. **Download Selected Photos**: In Edit mode, select any number of photos and click **Zip** in the edit toolbar to download only the chosen photos.
+
 ## Organizing Your Gallery
 
 The gallery isn't just a viewer; it's a powerful file manager! Any changes you make here actually modify the files on your computer's hard drive.
@@ -37,6 +43,7 @@ When you click on a photo to view it full size, you will see buttons at the bott
 If you have multiple photos to manage, click the **Edit** button in the top right corner.
 * **Selecting**: Clicking on photos will place a checkmark on them.
 * **Select All**: Click the **Select All** button in the edit toolbar to instantly select all photos currently visible in your grid. Clicking it again will deselect them.
+* **Batch Zip**: Click **Zip** in the edit toolbar to bundle all selected photos into a zip file.
 * **Batch Move**: Select multiple photos, then click **Move** in the toolbar to move them all to a new folder at once.
 * **Batch Rename**: Select multiple photos and click **Rename** to open a handy table view where you can quickly type new names for all of them. The thumbnails in this view are large so you can easily read product labels or DVD spines.
 * **Batch Delete**: Select photos you no longer want and click **Delete**. *Warning: This permanently removes the files from your hard drive!*

@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+const archiver = require('archiver');
 
 const app = express();
 const PORT = 3000;
@@ -385,6 +386,86 @@ app.post('/api/photos/upload', upload.array('photos'), (req, res) => {
   } catch (err) {
     console.error('Upload Error:', err);
     res.status(500).json({ error: 'Failed to upload photos' });
+  }
+});
+
+function createZipArchive(options = { zlib: { level: 6 } }) {
+  if (archiver && archiver.ZipArchive) {
+    return new archiver.ZipArchive(options);
+  }
+  if (typeof archiver === 'function') {
+    return archiver('zip', options);
+  }
+  if (archiver && archiver.default && typeof archiver.default === 'function') {
+    return archiver.default('zip', options);
+  }
+  throw new Error('Unable to create Zip archive instance');
+}
+
+// Download / Zip Photos Endpoint
+app.post('/api/photos/zip', (req, res) => {
+  try {
+    const { dirPath, photos } = req.body || {};
+    const archive = createZipArchive({ zlib: { level: 6 } });
+
+    archive.on('error', (err) => {
+      console.error('Archiver Error:', err);
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Failed to generate zip file' });
+      }
+    });
+
+    if (Array.isArray(photos) && photos.length > 0) {
+      // 1. Zipping Selected Photos
+      const zipName = 'selected-photos.zip';
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="${zipName}"`);
+      archive.pipe(res);
+
+      for (const p of photos) {
+        const activeDirPath = (!p.dirPath || p.dirPath === 'Root') ? '' : p.dirPath;
+        const filePath = path.join(PHOTOS_DIR, activeDirPath, p.name);
+        if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+          const entryPath = activeDirPath ? path.join(activeDirPath, p.name).replace(/\\/g, '/') : p.name;
+          archive.file(filePath, { name: entryPath });
+        }
+      }
+      archive.finalize();
+    } else if (dirPath && dirPath !== 'Root' && dirPath !== '') {
+      // 2. Zipping Current Folder & Subfolders
+      const folderBaseName = path.basename(dirPath) || 'folder';
+      const cleanName = folderBaseName.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const zipName = `${cleanName}-photos.zip`;
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="${zipName}"`);
+      archive.pipe(res);
+
+      const targetDir = path.join(PHOTOS_DIR, dirPath);
+      if (fs.existsSync(targetDir) && fs.statSync(targetDir).isDirectory()) {
+        archive.directory(targetDir, false, (entry) => {
+          if (entry.name === '.gitkeep' || entry.name.endsWith('/.gitkeep')) return false;
+          return entry;
+        });
+      }
+      archive.finalize();
+    } else {
+      // 3. Zipping All Photos
+      const zipName = 'all-photos.zip';
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="${zipName}"`);
+      archive.pipe(res);
+
+      archive.directory(PHOTOS_DIR, false, (entry) => {
+        if (entry.name === '.gitkeep' || entry.name.endsWith('/.gitkeep')) return false;
+        return entry;
+      });
+      archive.finalize();
+    }
+  } catch (err) {
+    console.error('Zip Endpoint Error:', err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Internal server error while zipping photos' });
+    }
   }
 });
 

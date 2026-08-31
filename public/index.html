@@ -35,7 +35,8 @@
           <div class="photo-count" id="photo-count">0 photos</div>
         </div>
         <div class="topbar-actions">
-          <button id="upload-photo-btn" class="action-btn primary" style="margin-right: 1rem;">Upload Photos</button>
+          <button id="zip-folder-btn" class="action-btn" style="margin-right: 0.5rem; background-color: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-main);">Download Zip</button>
+          <button id="upload-photo-btn" class="action-btn primary" style="margin-right: 0.5rem;">Upload Photos</button>
           <button id="toggle-edit-btn" class="action-btn">Edit</button>
           <input type="file" id="upload-file-input" multiple accept="image/*" style="display: none;">
         </div>
@@ -44,6 +45,7 @@
         <span id="selected-count">0 selected</span>
         <div class="edit-buttons">
           <button id="select-all-btn" class="action-btn" style="background-color: transparent; border: 1px solid var(--border-color); color: var(--text-main);">Select All</button>
+          <button id="batch-zip-btn" class="action-btn" style="background-color: transparent; border: 1px solid var(--border-color); color: var(--text-main);" disabled>Zip</button>
           <button id="batch-rename-btn" class="action-btn" style="background-color: transparent; border: 1px solid var(--border-color); color: var(--text-main);" disabled>Rename</button>
           <button id="batch-move-btn" class="action-btn primary" disabled>Move</button>
           <button id="batch-delete-btn" class="action-btn danger" disabled>Delete</button>

@@ -17,9 +17,11 @@ const toggleEditBtn = document.getElementById('toggle-edit-btn');
 const editToolbar = document.getElementById('edit-toolbar');
 const selectedCountText = document.getElementById('selected-count');
 const selectAllBtn = document.getElementById('select-all-btn');
+const batchZipBtn = document.getElementById('batch-zip-btn');
 const batchRenameBtn = document.getElementById('batch-rename-btn');
 const batchMoveBtn = document.getElementById('batch-move-btn');
 const batchDeleteBtn = document.getElementById('batch-delete-btn');
+const zipFolderBtn = document.getElementById('zip-folder-btn');
 const deleteConfirmModal = document.getElementById('delete-confirm-modal');
 const closeDeleteConfirm = document.getElementById('close-delete-confirm');
 const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
@@ -114,6 +116,7 @@ function updateSelectionUI() {
   const count = selectedPhotos.size;
   selectedCountText.textContent = `${count} selected`;
   const hasSelection = count > 0;
+  batchZipBtn.disabled = !hasSelection;
   batchRenameBtn.disabled = !hasSelection;
   batchMoveBtn.disabled = !hasSelection;
   batchDeleteBtn.disabled = !hasSelection;
@@ -614,6 +617,81 @@ submitDeleteBtn.onclick = async () => {
     alert('Failed to delete photos');
   }
 };
+
+// --- Zip / Download Logic ---
+async function triggerZipDownload(payload, defaultFilename = 'photos.zip') {
+  const res = await fetch('/api/photos/zip', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Failed to create zip file' }));
+    alert(err.error || 'Failed to generate zip file');
+    return;
+  }
+
+  let filename = defaultFilename;
+  const disposition = res.headers.get('Content-Disposition');
+  if (disposition && disposition.includes('filename=')) {
+    const match = disposition.match(/filename="?([^"]+)"?/);
+    if (match && match[1]) filename = match[1];
+  }
+
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.style.display = 'none';
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  a.remove();
+}
+
+zipFolderBtn.onclick = async () => {
+  const originalText = zipFolderBtn.textContent;
+  zipFolderBtn.textContent = 'Zipping...';
+  zipFolderBtn.disabled = true;
+
+  try {
+    const isAll = !currentDirPath || currentDirPath === 'Root';
+    const payload = isAll ? { mode: 'all' } : { dirPath: currentDirPath };
+    const defaultName = isAll ? 'all-photos.zip' : `${currentDirPath.split('/').pop()}-photos.zip`;
+    await triggerZipDownload(payload, defaultName);
+  } catch (err) {
+    console.error(err);
+    alert('An error occurred while zipping photos');
+  } finally {
+    zipFolderBtn.textContent = originalText;
+    zipFolderBtn.disabled = false;
+  }
+};
+
+batchZipBtn.onclick = async () => {
+  if (selectedPhotos.size === 0) return;
+
+  const originalText = batchZipBtn.textContent;
+  batchZipBtn.textContent = 'Zipping...';
+  batchZipBtn.disabled = true;
+
+  try {
+    const photosToZip = Array.from(selectedPhotos).map(p => ({
+      dirPath: p.dirPath,
+      name: p.name
+    }));
+    await triggerZipDownload({ photos: photosToZip }, 'selected-photos.zip');
+  } catch (err) {
+    console.error(err);
+    alert('An error occurred while zipping selected photos');
+  } finally {
+    batchZipBtn.textContent = originalText;
+    batchZipBtn.disabled = selectedPhotos.size === 0;
+  }
+};
+
 
 submitRenameCat.onclick = async () => {
   const newName = renameCatInput.value.trim();
